@@ -165,8 +165,7 @@ fun HighlightsScreen(modifier: Modifier) {
 fun SettingsScreen(modifier: Modifier) {
     val nav = LocalNav.current
     val state by Store.state.collectAsState()
-    val scope = rememberCoroutineScope()
-    var refreshing by remember { mutableStateOf(false) }
+    val refreshing by Blogs.running.collectAsState()
     var newFeed by remember { mutableStateOf("") }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         if (uri != null) {
@@ -204,13 +203,9 @@ fun SettingsScreen(modifier: Modifier) {
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { picker.launch(arrayOf("*/*")) }) { Text("Import OPML") }
-                OutlinedButton(enabled = !refreshing, onClick = {
-                    refreshing = true
-                    scope.launch {
-                        nav.say(runCatching { Blogs.refresh() }.getOrElse { "Refresh failed: ${it.message}" })
-                        refreshing = false
-                    }
-                }) { Text(if (refreshing) "Checking…" else "Check now") }
+                OutlinedButton(enabled = !refreshing, onClick = { Blogs.refreshNow(nav.say) }) {
+                    Text(if (refreshing) "Checking…" else "Check now")
+                }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(newFeed, { newFeed = it }, label = { Text("Add feed URL") }, singleLine = true,

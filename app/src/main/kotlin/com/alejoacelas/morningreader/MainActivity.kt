@@ -68,7 +68,7 @@ class Nav(private val stack: MutableList<Screen>, val say: (String) -> Unit, pri
     }
 
     private fun overBudget(minutes: Int): String {
-        val left = (Store.state.value.budgetMinutes - Store.usedMinutes()).toInt().coerceAtLeast(0)
+        val left = Store.minutesLeft()
         return "That's about $minutes min and you have $left left today. Pick something shorter, or come back tomorrow."
     }
 }

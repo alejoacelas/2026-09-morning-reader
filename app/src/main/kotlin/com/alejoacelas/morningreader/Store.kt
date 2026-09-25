@@ -132,6 +132,8 @@ object Store {
 
     fun usedMinutes(): Double = _state.value.usedSecondsToday / 60.0
 
+    fun minutesLeft(): Int = (_state.value.budgetMinutes - usedMinutes()).toInt().coerceAtLeast(0)
+
     /** A block may start only if it fits in what's left today; the one in progress can always finish. */
     fun canStart(itemId: String, minutes: Int): Boolean {
         val s = _state.value

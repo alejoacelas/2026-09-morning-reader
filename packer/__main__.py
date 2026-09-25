@@ -13,6 +13,7 @@ import argparse
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from . import segment, sources, videos
@@ -20,7 +21,8 @@ from .llm import Usage
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKS = ROOT / "packs"
-PHONE_DIR = "/sdcard/Android/data/com.alejoacelas.morningreader/files"
+PACKAGE = "com.alejoacelas.morningreader"
+PHONE_DIR = f"/sdcard/Android/data/{PACKAGE}/files"
 ADB_PHONE = Path.home() / "best/fun/adb-phone"
 
 # The first shelf, hand-picked from the user's to-read list. How to suggest further
@@ -101,10 +103,15 @@ def add_videos(pack: dict) -> None:
 
 def push(paths: list[Path], subdir: str = "packs") -> None:
     adb = [str(ADB_PHONE)]
-    subprocess.run(adb + ["shell", "mkdir", "-p", f"{PHONE_DIR}/{subdir}"], check=True)
+    # The app must create its own folder: one made by adb belongs to the shell user and
+    # the app can't read it. Opening the app once creates it.
+    if subprocess.run(adb + ["shell", "test", "-d", f"{PHONE_DIR}/{subdir}"]).returncode != 0:
+        subprocess.run(adb + ["shell", "am", "start", "-n", f"{PACKAGE}/.MainActivity"], check=True,
+                       stdout=subprocess.DEVNULL)
+        time.sleep(4)
     for path in paths:
         subprocess.run(adb + ["push", str(path), f"{PHONE_DIR}/{subdir}/{path.name}"], check=True,
-                       stdout=subprocess.DEVNULL)
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         print(f"  pushed {path.name}")
     print("Open the app (or pull to refresh) to import.")
 
@@ -120,6 +127,7 @@ def main() -> None:
     starter = sub.add_parser("starter", help="build and push the starter shelf")
     starter.add_argument("--no-push", action="store_true")
     sub.add_parser("push", help="push all built packs")
+    sub.add_parser("tidy", help="re-apply text cleanup to built packs without rebuilding them")
     vids = sub.add_parser("videos", help="find videos for built packs that have none")
     vids.add_argument("ids", nargs="*", help="Gutenberg ids (default: every pack without videos)")
     sub.add_parser("opml", help="push an OPML feed list").add_argument("file", type=Path)
@@ -148,6 +156,14 @@ def main() -> None:
                 print(pack["title"])
                 add_videos(pack)
                 path.write_text(json.dumps(pack, ensure_ascii=False, indent=1))
+    elif args.command == "tidy":
+        for path in sorted(PACKS.glob("*.json")):
+            pack = json.loads(path.read_text())
+            for block in pack["blocks"]:
+                block["paragraphs"] = sources.dedupe_headings(block["paragraphs"])
+                block["words"] = sum(len(p.split()) for p in block["paragraphs"])
+            path.write_text(json.dumps(pack, ensure_ascii=False, indent=1))
+            print(f"  tidied {path.name}")
     elif args.command == "push":
         push(sorted(PACKS.glob("*.json")))
     elif args.command == "opml":

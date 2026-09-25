@@ -9,7 +9,11 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -42,6 +46,20 @@ object Blogs {
             .enqueueUniquePeriodicWork("blogs", ExistingPeriodicWorkPolicy.KEEP, request)
     }
 
+    val running = MutableStateFlow(false)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** Refreshes outside any screen, so leaving the screen doesn't cancel it. */
+    fun refreshNow(onDone: (String) -> Unit) {
+        if (running.value) return
+        running.value = true
+        scope.launch {
+            val status = runCatching { refresh() }.getOrElse { "Couldn't refresh posts: ${it.message}" }
+            running.value = false
+            withContext(Dispatchers.Main) { onDone(status) }
+        }
+    }
+
     private data class Entry(val title: String, val url: String, val published: Long, val html: String)
 
     suspend fun refresh(): String = withContext(Dispatchers.IO) {
@@ -52,11 +70,12 @@ object Blogs {
         val kept = AtomicInteger()
         val failed = AtomicInteger()
         coroutineScope {
-            state.feeds.map { feed ->
+            state.feeds.map { original ->
                 async {
                     gate.withPermit {
-                        val entries = runCatching { entries(feed.url) }
-                            .onFailure { Log.w(TAG, "feed ${feed.url}", it); failed.incrementAndGet() }.getOrDefault(emptyList())
+                        val entries = runCatching { entries(original.url) }
+                            .onFailure { Log.w(TAG, "feed ${original.url}", it); failed.incrementAndGet() }.getOrDefault(emptyList())
+                        val feed = Store.state.value.feeds.firstOrNull { it.url == original.url } ?: original
                         entries.filter { it.published >= cutoff && it.url !in seen }.take(PER_FEED).forEach { entry ->
                             synchronized(seen) { seen += entry.url }
                             runCatching { consider(feed, entry) }
@@ -66,6 +85,11 @@ object Blogs {
                     }
                 }
             }.awaitAll()
+        }
+        // Posts saved without a hook (for example when a refresh was interrupted) get one now.
+        Store.posts.value.filter { it.hook.isBlank() }.forEach { post ->
+            runCatching { Ai.postHook(post.title, post.feedTitle, post.paragraphs.joinToString("\n")) }
+                .onSuccess { (hook, playlist) -> Store.savePost(post.copy(hook = hook, playlistPrompt = playlist)) }
         }
         val finished = Store.state.value.finished
         Store.prunePosts { it.published >= cutoff || it.id !in finished }
@@ -88,6 +112,10 @@ object Blogs {
 
     private fun entries(feedUrl: String): List<Entry> {
         val doc = Jsoup.parse(get(feedUrl), feedUrl, Parser.xmlParser())
+        val name = (doc.selectFirst("channel > title") ?: doc.selectFirst("feed > title"))?.text()?.trim()
+        if (!name.isNullOrEmpty()) Store.update { s ->
+            s.copy(feeds = s.feeds.map { if (it.url == feedUrl && it.title != name) it.copy(title = name) else it })
+        }
         val items = doc.select("item").ifEmpty { doc.select("entry") }
         return items.map { item ->
             val link = item.selectFirst("link[rel=alternate]")?.attr("href")
@@ -121,8 +149,13 @@ object Blogs {
             }
         }
         if (Store.minutesFor(words) < MIN_MINUTES || words < MIN_MINUTES * 200) return false
-        val (hook, playlist) = runCatching { Ai.postHook(entry.title, feed.title, paragraphs.joinToString("\n")) }
-            .getOrDefault("" to "")
+        val (hook, playlist) = try {
+            Ai.postHook(entry.title, feed.title, paragraphs.joinToString("\n"))
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "hook ${entry.url}", e); "" to ""
+        }
         Store.savePost(
             BlogPost(
                 id = "post-" + sha1(entry.url).take(16), feedTitle = feed.title, title = entry.title,

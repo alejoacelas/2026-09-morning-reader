@@ -25,8 +25,9 @@ object Session {
             item(progress.itemId)?.let { cards += Card.Reading(it, "Resume", minutesLeft(it, progress)) }
         }
         val taken = cards.map { it.key }.toMutableSet()
+        val busyBook = state.inProgress?.let { item(it.itemId)?.bookId }
 
-        val bookCards = books.mapNotNull { book ->
+        val bookCards = books.filter { it.id != busyBook }.mapNotNull { book ->
             val lastRead = book.blocks.filter { it.id in state.finished }.maxByOrNull { it.order }
             val next = lastRead?.let { last -> book.blocks.firstOrNull { it.order > last.order && it.id !in state.finished } }
             val block: Block
@@ -34,7 +35,8 @@ object Session {
             if (next != null) {
                 block = next; label = "Continue"
             } else {
-                val entries = book.blocks.filter { it.entryPoint && it.id !in state.finished }
+                // Rotate among the earliest unread entry points so a dip-in never lands on the ending.
+                val entries = book.blocks.filter { it.entryPoint && it.id !in state.finished }.take(3)
                 if (entries.isEmpty()) return@mapNotNull null
                 block = entries[Math.floorMod(daySeed + book.id.hashCode(), entries.size)]
                 label = if (block.order == 0) "Start" else "Dip in"

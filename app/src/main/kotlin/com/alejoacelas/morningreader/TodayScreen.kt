@@ -50,9 +50,9 @@ fun TodayScreen(modifier: Modifier) {
         Session.cards(state, books, posts)
     }
     val scope = rememberCoroutineScope()
-    var refreshing by remember { mutableStateOf(false) }
+    val refreshing by Blogs.running.collectAsState()
     val used = (state.usedSecondsToday / 60).toInt()
-    val left = (state.budgetMinutes - used).coerceAtLeast(0)
+    val left = Store.minutesLeft()
 
     LazyColumn(modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp, 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -64,13 +64,8 @@ fun TodayScreen(modifier: Modifier) {
                     Text("This morning", style = MaterialTheme.typography.headlineMedium)
                 }
                 IconButton(onClick = {
-                    refreshing = true
-                    scope.launch {
-                        Store.reload()
-                        val status = runCatching { Blogs.refresh() }.getOrElse { "Couldn't refresh posts: ${it.message}" }
-                        refreshing = false
-                        nav.say(status)
-                    }
+                    scope.launch { Store.reload() }
+                    Blogs.refreshNow(nav.say)
                 }) {
                     if (refreshing) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                     else Icon(Icons.Outlined.Refresh, contentDescription = "Refresh")

@@ -228,7 +228,7 @@ private fun AfterBlock(item: ReadItem, state: AppState) {
     val nav = LocalNav.current
     val next = Store.nextBlock(item)
     val book = Store.book(item.bookId)
-    val left = (state.budgetMinutes - state.usedSecondsToday / 60).toInt().coerceAtLeast(0)
+    val left = Store.minutesLeft()
     Text("Done.", style = MaterialTheme.typography.titleLarge)
     Text("$left of ${state.budgetMinutes} minutes left today.", style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -276,7 +276,7 @@ private fun BlockText(item: ReadItem, textColor: Int, accent: Int, onExplain: (S
             TextView(ctx).apply {
                 typeface = ctx.resources.getFont(R.font.literata)
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 18.5f)
-                setLineSpacing(0f, 1.5f)
+                setLineSpacing(0f, 1.12f)
                 setTextIsSelectable(true)
                 customSelectionActionModeCallback = object : ActionMode.Callback {
                     override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {

@@ -174,5 +174,21 @@ def extract(path: Path) -> dict:
                 if not text:
                     continue
                 paragraphs.append(("## " + text.replace("\n", " ")) if el.name[0] == "h" else text)
-        meta["paragraphs"] = paragraphs
+        meta["paragraphs"] = dedupe_headings(paragraphs)
         return meta
+
+
+def dedupe_headings(paragraphs: list[str]) -> list[str]:
+    """Drop the pieces of a chapter title repeated right after it ("## VI: The Inquest", "VI", "The Inquest")."""
+    out: list[str] = []
+    pieces: set[str] = set()
+    for para in paragraphs:
+        bare = para.removeprefix("## ").strip()
+        if pieces and bare in pieces:
+            pieces.discard(bare)
+            continue
+        pieces = set()
+        if para.startswith("## ") and ": " in bare:
+            pieces = {bare, *(x.strip() for x in bare.split(": ", 1))}
+        out.append(para)
+    return out
