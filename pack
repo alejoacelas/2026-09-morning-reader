@@ -1,0 +1,3 @@
+#!/bin/sh
+# Build and push book packs. Run `./pack --help` for commands.
+exec uv run --quiet --project "$(dirname "$0")" python -m packer "$@"
