@@ -61,6 +61,18 @@ object Store {
         scope.launch { reload() }
     }
 
+    private var packsSignature = ""
+
+    private fun currentSignature(): String =
+        packsDir.listFiles().orEmpty().sortedBy { it.name }.joinToString { "${it.name}:${it.length()}:${it.lastModified()}" } +
+            "|" + importDir.listFiles { f -> f.extension.lowercase() in setOf("opml", "xml") }.orEmpty().size
+
+    /** Reloads only if packs or feed lists were pushed since the last load (called when the app comes forward). */
+    fun reloadIfChanged() {
+        if (!::appContext.isInitialized) return
+        scope.launch { if (loaded.value && currentSignature() != packsSignature) reload() }
+    }
+
     /** Reads saved state, book packs pushed from the Mac, saved posts and any pushed OPML. */
     suspend fun reload() = withContext(Dispatchers.IO) {
         if (!loaded.value && stateFile.exists()) {
@@ -80,6 +92,7 @@ object Store {
             f.renameTo(File(f.parentFile, f.name + ".imported"))
         }
         update { it }
+        packsSignature = currentSignature()
         loaded.value = true
     }
 
@@ -120,6 +133,7 @@ object Store {
         val known = _state.value.feeds.map { it.url }.toSet()
         val added = feeds.filter { it.url !in known }.distinctBy { it.url }
         update { it.copy(feeds = it.feeds + added) }
+        if (added.isNotEmpty()) Blogs.refreshNow { }
         return added.size
     }
 

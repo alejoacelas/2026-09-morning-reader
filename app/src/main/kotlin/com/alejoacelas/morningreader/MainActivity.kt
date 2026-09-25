@@ -81,6 +81,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent { ReaderTheme { AppRoot() } }
     }
+
+    override fun onResume() {
+        super.onResume()
+        Store.reloadIfChanged()
+        // Mornings shouldn't depend on the background schedule: refresh stale or failed feeds on open.
+        val last = Store.state.value.lastBlogRefresh
+        if (Blogs.lastMostlyFailed || System.currentTimeMillis() - last > 6 * 60 * 60 * 1000L) Blogs.refreshNow { }
+    }
 }
 
 @Composable

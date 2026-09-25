@@ -47,6 +47,9 @@ object Blogs {
     }
 
     val running = MutableStateFlow(false)
+
+    /** True when the last refresh reached fewer than half the feeds (e.g. no network while asleep). */
+    @Volatile var lastMostlyFailed = false
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /** Refreshes outside any screen, so leaving the screen doesn't cancel it. */
@@ -93,6 +96,7 @@ object Blogs {
         }
         val finished = Store.state.value.finished
         Store.prunePosts { it.published >= cutoff || it.id !in finished }
+        lastMostlyFailed = state.feeds.isNotEmpty() && failed.get() * 2 > state.feeds.size
         val status = "Checked ${state.feeds.size} feeds: $kept new long posts" +
             (if (failed.get() > 0) ", ${failed.get()} feeds failed" else "")
         Store.update {
@@ -196,6 +200,9 @@ object Blogs {
 class BlogWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         Store.reload()
-        return runCatching { Blogs.refresh() }.fold({ Result.success() }, { Result.retry() })
+        return runCatching { Blogs.refresh() }.fold(
+            { if (Blogs.lastMostlyFailed) Result.retry() else Result.success() },
+            { Result.retry() },
+        )
     }
 }
