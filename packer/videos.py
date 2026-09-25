@@ -7,6 +7,10 @@ import httpx
 from .llm import _env, ask_json
 
 MAX_SECONDS = 600
+
+
+class QuotaError(RuntimeError):
+    pass
 API = "https://www.googleapis.com/youtube/v3"
 
 SCREEN_PROMPT = """A reader is dipping into "{title}" by {author}. {summary}
@@ -40,13 +44,17 @@ def find(title: str, author: str, summary: str, queries: list[str], blocks: list
          lang: str = "en") -> list[dict]:
     key = _env("YOUTUBE_API_KEY")
     ids: list[str] = []
-    for query in queries[:4]:
-        for duration in ("medium", "short"):  # medium is 4-20 min, short under 4
-            resp = httpx.get(f"{API}/search", timeout=30, params={
-                "part": "id", "q": query, "type": "video", "videoDuration": duration,
-                "maxResults": 8 if duration == "medium" else 4, "relevanceLanguage": lang, "key": key})
-            resp.raise_for_status()
-            ids += [item["id"]["videoId"] for item in resp.json().get("items", [])]
+    # Each search costs 100 of the 10,000 daily quota units: four medium (4-20 min)
+    # searches plus one short (under 4 min) keeps a book at 500.
+    searches = [(q, "medium", 8) for q in queries[:4]] + [(q, "short", 4) for q in queries[:1]]
+    for query, duration, count in searches:
+        resp = httpx.get(f"{API}/search", timeout=30, params={
+            "part": "id", "q": query, "type": "video", "videoDuration": duration,
+            "maxResults": count, "relevanceLanguage": lang, "key": key})
+        if resp.status_code in (403, 429):
+            raise QuotaError(f"YouTube search refused ({resp.status_code}); daily quota is likely used up")
+        resp.raise_for_status()
+        ids += [item["id"]["videoId"] for item in resp.json().get("items", [])]
     ids = list(dict.fromkeys(ids))
     candidates = []
     for i in range(0, len(ids), 50):

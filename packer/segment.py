@@ -20,7 +20,7 @@ index and runs until the next block starts. Rules:
   longer than {max} words, break it into two or more blocks at a scene change. Break at
   natural pauses: chapter or section starts, scene changes, the end of an argument.
 - Short stories and poems are never split. In a story collection a block is one or more
-  whole stories; in poetry a block is a few whole poems. Mark such blocks
+  whole stories; in poetry a block is three or four whole poems. Mark such blocks
   "whole_work": true; they may run shorter than {min} words, or longer than {max} if one
   story is long.
 - Cover every paragraph. Mark front matter, contents lists, indexes, notes, appendices
@@ -123,6 +123,23 @@ def _fill_split_hooks(title: str, author: str, language: str, blocks: list[dict]
             todo[n]["hook"] = item.get("hook") or todo[n]["hook"]
 
 
+def _absorb_scraps(blocks: list[dict], paragraphs: list[str], limit: int = 400) -> list[dict]:
+    """Merge any remaining sub-`limit`-word block into a contiguous neighbour."""
+    out: list[dict] = []
+    for block in blocks:
+        words = sum(_words(p) for p in paragraphs[block["start"]:block["end"]])
+        if words < limit and not block.get("whole_work") and out and out[-1]["end"] == block["start"]:
+            out[-1]["end"] = block["end"]
+        else:
+            out.append(block)
+    if len(out) > 1:  # a scrap at the very start joins the block after it
+        first = out[0]
+        if sum(_words(p) for p in paragraphs[first["start"]:first["end"]]) < limit and out[1]["start"] == first["end"]:
+            out[1] = dict(out[1], start=first["start"], entry_point=True)
+            out = out[1:]
+    return out
+
+
 def segment(title: str, author: str, paragraphs: list[str], language: str = "English", log=print) -> dict:
     """Return book-level fields plus 'blocks' with start/end paragraph indices."""
     offsets, total = [], 0
@@ -154,15 +171,29 @@ def segment(title: str, author: str, paragraphs: list[str], language: str = "Eng
             raw_blocks.append(dict(by_start[s], start=s, end=e))
 
     blocks: list[dict] = []
+    carry: dict | None = None  # a heading-only scrap waiting to join the block after it
     for block in raw_blocks:
         if block.get("skip"):
+            carry = None
             continue
-        words = sum(_words(p) for p in paragraphs[block["start"]:block["end"]])
-        whole = block.get("whole_work") or (blocks and blocks[-1].get("whole_work"))
-        if words < MIN_WORDS / 2 and not whole and blocks and blocks[-1]["end"] == block["start"]:
-            blocks[-1]["end"] = block["end"]  # fold a scrap into the block before it
-            continue
+        if carry is not None and carry["end"] == block["start"]:
+            block = dict(block, start=carry["start"])
+        carry = None
+        text = paragraphs[block["start"]:block["end"]]
+        words = sum(_words(p) for p in text)
+        # Trust "whole story/poem" only when the block opens on a heading (the work's title).
+        block["whole_work"] = bool(block.get("whole_work") and text and text[0].startswith("## "))
+        if words < MIN_WORDS / 2 and not block.get("whole_work"):
+            if text and text[-1].startswith("## "):
+                carry = block  # it ends on a heading: it belongs with what follows
+                continue
+            if blocks and blocks[-1]["end"] == block["start"]:
+                blocks[-1]["end"] = block["end"]  # fold a scrap into the block before it
+                continue
         blocks.extend([block] if block.get("whole_work") else _split_long(block, paragraphs))
+    if carry is not None and blocks and blocks[-1]["end"] == carry["start"]:
+        blocks[-1]["end"] = carry["end"]
+    blocks = _absorb_scraps(blocks, paragraphs)
     for block in blocks:
         block["words"] = sum(_words(p) for p in paragraphs[block["start"]:block["end"]])
     if blocks:

@@ -5,6 +5,7 @@
   ./pack search "wealth of nations"   list matches without building
   ./pack starter                      build and push the starter shelf
   ./pack push                         push every built pack to the phone
+  ./pack videos [ID ...]              find videos for packs that have none (YouTube quota)
   ./pack opml FILE                    push a feed list (OPML) for the app to import
 """
 
@@ -34,7 +35,9 @@ STARTER = {
     7849: "The Trial",
     863: "The Mysterious Affair at Styles",
 }
+LANGUAGE_CODES = {}  # filled below: "Spanish" -> "es"
 LANGUAGES = {"en": "English", "es": "Spanish", "fr": "French", "de": "German", "it": "Italian", "pt": "Portuguese"}
+LANGUAGE_CODES.update({name: code for code, name in LANGUAGES.items()})
 
 
 def build(query: str) -> Path:
@@ -62,26 +65,38 @@ def build(query: str) -> Path:
             "playlist_prompt": b.get("playlist_prompt") or "", "videos": [],
         })
     print(f"  {len(blocks)} blocks, {sum(b['entry_point'] for b in blocks)} entry points")
-    picks = videos.find(text["title"], text["author"], seg.get("summary") or "",
-                        seg.get("video_queries") or [], blocks, lang=text["language"].split("-")[0].lower())
-    for pick in picks:
-        index = pick.pop("block")
-        if isinstance(index, int) and 0 <= index < len(blocks):
-            blocks[index]["videos"].append(pick)
-    print(f"  {len(picks)} videos")
     pack = {
         "version": 1, "id": book_id, "title": text["title"], "author": text["author"], "language": language,
         "year": seg.get("year"), "origin": seg.get("origin"),
         "edition": "Standard Ebooks" if edition == "se" else "Project Gutenberg",
         "source_url": f"https://www.gutenberg.org/ebooks/{book.gutenberg_id}",
         "summary": seg.get("summary") or "", "playlist_prompts": seg.get("playlist_prompts") or {},
-        "videos": picks, "blocks": blocks,
+        "video_queries": seg.get("video_queries") or [], "videos": [], "blocks": blocks,
     }
+    add_videos(pack)
     PACKS.mkdir(exist_ok=True)
     path = PACKS / f"{book_id}.json"
     path.write_text(json.dumps(pack, ensure_ascii=False, indent=1))
     print(f"  wrote {path.relative_to(ROOT)} (Gemini cost ${Usage.cost - cost_before:.3f})")
     return path
+
+
+def add_videos(pack: dict) -> None:
+    """Attach up to four screened YouTube videos to a pack, if the daily quota allows."""
+    for block in pack["blocks"]:
+        block["videos"] = []
+    try:
+        picks = videos.find(pack["title"], pack["author"], pack["summary"], pack.get("video_queries") or [],
+                            pack["blocks"], lang=LANGUAGE_CODES.get(pack.get("language"), "en"))
+    except videos.QuotaError as err:
+        print(f"  no videos: {err}. Run ./pack videos {pack['id'].split('-')[-1]} tomorrow.")
+        return
+    for pick in picks:
+        index = pick.pop("block")
+        if isinstance(index, int) and 0 <= index < len(pack["blocks"]):
+            pack["blocks"][index]["videos"].append(pick)
+    pack["videos"] = picks
+    print(f"  {len(picks)} videos")
 
 
 def push(paths: list[Path], subdir: str = "packs") -> None:
@@ -105,6 +120,8 @@ def main() -> None:
     starter = sub.add_parser("starter", help="build and push the starter shelf")
     starter.add_argument("--no-push", action="store_true")
     sub.add_parser("push", help="push all built packs")
+    vids = sub.add_parser("videos", help="find videos for built packs that have none")
+    vids.add_argument("ids", nargs="*", help="Gutenberg ids (default: every pack without videos)")
     sub.add_parser("opml", help="push an OPML feed list").add_argument("file", type=Path)
     args = parser.parse_args()
 
@@ -123,6 +140,14 @@ def main() -> None:
         print(f"Total Gemini cost this run: ${Usage.cost:.3f}")
         if not args.no_push:
             push(paths)
+    elif args.command == "videos":
+        paths = [PACKS / f"gutenberg-{i}.json" for i in args.ids] or sorted(PACKS.glob("*.json"))
+        for path in paths:
+            pack = json.loads(path.read_text())
+            if args.ids or not pack.get("videos"):
+                print(pack["title"])
+                add_videos(pack)
+                path.write_text(json.dumps(pack, ensure_ascii=False, indent=1))
     elif args.command == "push":
         push(sorted(PACKS.glob("*.json")))
     elif args.command == "opml":
