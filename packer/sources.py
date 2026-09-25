@@ -52,8 +52,8 @@ def by_id(gutenberg_id: int) -> Book:
     if creator:  # "Darwin, Charles, 1809-1882" -> "Charles Darwin"
         parts = [p.strip() for p in creator.get_text().split(",") if not re.search(r"\d", p)]
         author = " ".join(reversed(parts[:2]))
-    if author and title.endswith(" by " + author):
-        title = title[: -len(" by " + author)]
+    if " by " in title:  # the heading is "<title> by <author as printed>"
+        title = title.rsplit(" by ", 1)[0]
     return Book(gutenberg_id, title or f"Gutenberg #{gutenberg_id}", author)
 
 
@@ -114,7 +114,7 @@ def download(book: Book) -> tuple[Path, str]:
 SKIP_FILES = re.compile(r"(titlepage|imprint|colophon|uncopyright|halftitle|toc|loi|endnotes|"
                         r"frontispiece|wrap0000|cover|copyright|nav)\.x?html", re.I)
 INVISIBLE = re.compile("[﻿⁠​­]")
-LINE_BREAK = "\u2028"
+LINE_BREAK = "\ue000"  # private-use sentinel; not whitespace, so it survives collapsing
 
 
 def _text(el: Tag) -> str:
@@ -124,6 +124,7 @@ def _text(el: Tag) -> str:
     for line in el.select("span.line, span[class*=i1], span[class*=i2]"):
         line.insert_after(LINE_BREAK)
     text = re.sub(r"\s+", " ", INVISIBLE.sub("", el.get_text()))
+    text = re.sub(r"#([^#]+)#", r"\1", text)  # Gutenberg's plain-text italics markers
     lines = [ln.strip() for ln in text.split(LINE_BREAK)]
     return "\n".join(ln for ln in lines if ln)
 
@@ -153,6 +154,13 @@ def extract(path: Path) -> dict:
             for junk in body.select('[id^="pg-"], #project-gutenberg-license, nav, table, figure, '
                                     'sup, a[epub\\:type="noteref"], .pagenum, [class*="pagenum"]'):
                 junk.decompose()
+            for stanza in body.select('div[class*="stanza"], div[class*="estrofa"], div[class*="verse"], div.lg'):
+                lines = [_text(p) for p in stanza.find_all(["p", "div", "span"], recursive=False)]
+                lines = [ln for ln in lines if ln]
+                if lines:
+                    joined = soup.new_tag("p")
+                    joined.string = LINE_BREAK.join(lines)
+                    stanza.replace_with(joined)
             header = body.find("header")
             if header is not None:
                 head_title = soup.title.get_text(strip=True) if soup.title else ""

@@ -7,7 +7,8 @@ MIN_WORDS, TARGET_WORDS, MAX_WORDS = 1200, 2400, 3600  # about 5, 10 and 15 minu
 WINDOW_WORDS = 140_000  # one Gemini call per window keeps output within limits
 
 BOOK_PROMPT = """You are preparing "{title}" by {author} for a reader who dips into books in
-10-minute sittings instead of reading cover to cover.
+10-minute sittings instead of reading cover to cover. The book is in {language}: write every
+title, hook, recap, summary and playlist prompt in {language}.
 
 Below is the {part}text, one paragraph per line. Each line starts with
 [paragraph index @ word offset]. Headings start with "##".
@@ -16,8 +17,12 @@ Divide the text into consecutive reading blocks. Each block starts at a paragrap
 index and runs until the next block starts. Rules:
 - Aim for {target} words per block. A block must never exceed {max} words or fall under
   {min}: compute each block's length by subtracting word offsets, and if a chapter is
-  longer than {max} words, break it into two or more blocks at a scene change. Break at natural pauses: chapter or section starts, scene
-  changes, the end of an argument.
+  longer than {max} words, break it into two or more blocks at a scene change. Break at
+  natural pauses: chapter or section starts, scene changes, the end of an argument.
+- Short stories and poems are never split. In a story collection a block is one or more
+  whole stories; in poetry a block is a few whole poems. Mark such blocks
+  "whole_work": true; they may run shorter than {min} words, or longer than {max} if one
+  story is long.
 - Cover every paragraph. Mark front matter, contents lists, indexes, notes, appendices
   of tables and licence text with "skip": true.
 - "hook": one line, at most 20 words, saying concretely what happens or is argued in
@@ -34,7 +39,7 @@ index and runs until the next block starts. Rules:
 {book_fields}
 Reply with JSON only:
 {{{book_schema}"blocks": [{{"start": 0, "title": "", "hook": "", "entry_point": false,
-"recap": null, "playlist_prompt": "", "skip": false}}]}}
+"recap": null, "playlist_prompt": "", "whole_work": false, "skip": false}}]}}
 
 TEXT:
 {text}
@@ -92,7 +97,7 @@ def _split_long(block: dict, paragraphs: list[str]) -> list[dict]:
     return result
 
 
-HOOK_PROMPT = """These passages come from "{title}" by {author}. For each, write a short
+HOOK_PROMPT = """These passages come from "{title}" by {author}. Writing in {language}, give each a short
 "title" and a "hook": one line, at most 20 words, saying concretely what happens or is
 argued. Use plain words and the book's own terms, no hype.
 
@@ -102,14 +107,15 @@ Reply with JSON only: {{"passages": [{{"n": 0, "title": "", "hook": ""}}]}}
 """
 
 
-def _fill_split_hooks(title: str, author: str, blocks: list[dict], paragraphs: list[str]) -> None:
+def _fill_split_hooks(title: str, author: str, language: str, blocks: list[dict], paragraphs: list[str]) -> None:
     """Give blocks created by splitting their own titles and hooks."""
     todo = [b for b in blocks if b.get("split")]
     if not todo:
         return
     passages = "\n\n".join(
         f"PASSAGE {n}:\n" + "\n".join(paragraphs[b["start"]:b["end"]]) for n, b in enumerate(todo))
-    reply = ask_json(HOOK_PROMPT.format(title=title, author=author, passages=passages), max_tokens=8000)
+    reply = ask_json(HOOK_PROMPT.format(title=title, author=author, language=language, passages=passages),
+                     max_tokens=8000)
     for item in reply.get("passages", []):
         n = item.get("n")
         if isinstance(n, int) and 0 <= n < len(todo):
@@ -117,7 +123,7 @@ def _fill_split_hooks(title: str, author: str, blocks: list[dict], paragraphs: l
             todo[n]["hook"] = item.get("hook") or todo[n]["hook"]
 
 
-def segment(title: str, author: str, paragraphs: list[str], log=print) -> dict:
+def segment(title: str, author: str, paragraphs: list[str], language: str = "English", log=print) -> dict:
     """Return book-level fields plus 'blocks' with start/end paragraph indices."""
     offsets, total = [], 0
     for para in paragraphs:
@@ -133,7 +139,7 @@ def segment(title: str, author: str, paragraphs: list[str], log=print) -> dict:
         first = w == 0
         log(f"  segmenting window {w + 1}/{len(windows)} (paragraphs {lo}-{hi - 1})")
         reply = ask_json(BOOK_PROMPT.format(
-            title=title, author=author, part=part, target=TARGET_WORDS, min=MIN_WORDS,
+            title=title, author=author, language=language, part=part, target=TARGET_WORDS, min=MIN_WORDS,
             max=MAX_WORDS, book_fields=BOOK_FIELDS if first else "",
             book_schema=BOOK_SCHEMA if first else "", text=lines))
         if first:
@@ -152,14 +158,15 @@ def segment(title: str, author: str, paragraphs: list[str], log=print) -> dict:
         if block.get("skip"):
             continue
         words = sum(_words(p) for p in paragraphs[block["start"]:block["end"]])
-        if words < MIN_WORDS / 2 and blocks and blocks[-1]["end"] == block["start"]:
+        whole = block.get("whole_work") or (blocks and blocks[-1].get("whole_work"))
+        if words < MIN_WORDS / 2 and not whole and blocks and blocks[-1]["end"] == block["start"]:
             blocks[-1]["end"] = block["end"]  # fold a scrap into the block before it
             continue
-        blocks.extend(_split_long(block, paragraphs))
+        blocks.extend([block] if block.get("whole_work") else _split_long(block, paragraphs))
     for block in blocks:
         block["words"] = sum(_words(p) for p in paragraphs[block["start"]:block["end"]])
     if blocks:
         blocks[0]["entry_point"] = True
-    _fill_split_hooks(title, author, blocks, paragraphs)
+    _fill_split_hooks(title, author, language, blocks, paragraphs)
     book["blocks"] = blocks
     return book

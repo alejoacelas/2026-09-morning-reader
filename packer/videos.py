@@ -36,14 +36,15 @@ def _seconds(iso: str) -> int:
     return ((d * 24 + h) * 60 + m) * 60 + s
 
 
-def find(title: str, author: str, summary: str, queries: list[str], blocks: list[dict]) -> list[dict]:
+def find(title: str, author: str, summary: str, queries: list[str], blocks: list[dict],
+         lang: str = "en") -> list[dict]:
     key = _env("YOUTUBE_API_KEY")
     ids: list[str] = []
     for query in queries[:4]:
         for duration in ("medium", "short"):  # medium is 4-20 min, short under 4
             resp = httpx.get(f"{API}/search", timeout=30, params={
                 "part": "id", "q": query, "type": "video", "videoDuration": duration,
-                "maxResults": 8 if duration == "medium" else 4, "relevanceLanguage": "en", "key": key})
+                "maxResults": 8 if duration == "medium" else 4, "relevanceLanguage": lang, "key": key})
             resp.raise_for_status()
             ids += [item["id"]["videoId"] for item in resp.json().get("items", [])]
     ids = list(dict.fromkeys(ids))

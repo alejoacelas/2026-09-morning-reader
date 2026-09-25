@@ -22,16 +22,19 @@ PACKS = ROOT / "packs"
 PHONE_DIR = "/sdcard/Android/data/com.alejoacelas.morningreader/files"
 ADB_PHONE = Path.home() / "best/fun/adb-phone"
 
-# A fixed, hand-picked first shelf of timeless classics. How to suggest further books
-# is an open question (see DECISIONS.md).
+# The first shelf, hand-picked from the user's to-read list. How to suggest further
+# books is an open question (see DECISIONS.md).
 STARTER = {
     145: "Middlemarch",
     10378: "Autobiography of John Stuart Mill",
-    1727: "The Odyssey",
-    2680: "Meditations",
-    3600: "Essays of Montaigne",
-    944: "The Voyage of the Beagle",
+    13507: "Cuentos de amor de locura y de muerte",
+    72665: "Romancero gitano",
+    84: "Frankenstein",
+    1399: "Anna Karenina",
+    7849: "The Trial",
+    863: "The Mysterious Affair at Styles",
 }
+LANGUAGES = {"en": "English", "es": "Spanish", "fr": "French", "de": "German", "it": "Italian", "pt": "Portuguese"}
 
 
 def build(query: str) -> Path:
@@ -46,7 +49,8 @@ def build(query: str) -> Path:
     print(f"{text['title']} by {text['author']} (#{book.gutenberg_id}, "
           f"{'Standard Ebooks' if edition == 'se' else 'Project Gutenberg'}): {words:,} words")
     cost_before = Usage.cost
-    seg = segment.segment(text["title"], text["author"], paragraphs)
+    language = LANGUAGES.get(text["language"].split("-")[0].lower(), text["language"])
+    seg = segment.segment(text["title"], text["author"], paragraphs, language=language)
     book_id = f"gutenberg-{book.gutenberg_id}"
     blocks = []
     for n, b in enumerate(seg["blocks"]):
@@ -59,14 +63,14 @@ def build(query: str) -> Path:
         })
     print(f"  {len(blocks)} blocks, {sum(b['entry_point'] for b in blocks)} entry points")
     picks = videos.find(text["title"], text["author"], seg.get("summary") or "",
-                        seg.get("video_queries") or [], blocks)
+                        seg.get("video_queries") or [], blocks, lang=text["language"].split("-")[0].lower())
     for pick in picks:
         index = pick.pop("block")
         if isinstance(index, int) and 0 <= index < len(blocks):
             blocks[index]["videos"].append(pick)
     print(f"  {len(picks)} videos")
     pack = {
-        "version": 1, "id": book_id, "title": text["title"], "author": text["author"],
+        "version": 1, "id": book_id, "title": text["title"], "author": text["author"], "language": language,
         "year": seg.get("year"), "origin": seg.get("origin"),
         "edition": "Standard Ebooks" if edition == "se" else "Project Gutenberg",
         "source_url": f"https://www.gutenberg.org/ebooks/{book.gutenberg_id}",

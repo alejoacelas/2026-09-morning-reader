@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- An open book with a rising sun: a morning of reading. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#D08A3C"
+        android:pathData="M42,50 A12,12 0 0,1 66,50 Z" />
+    <path android:fillColor="#3B3A36"
+        android:pathData="M30,56 C38,52 48,53 54,58 C60,53 70,52 78,56 L78,76 C70,72 60,73 54,78 C48,73 38,72 30,76 Z" />
+    <path android:fillColor="#F4EFE6"
+        android:pathData="M53,60 L55,60 L55,75 L53,75 Z" />
+</vector>
