@@ -19,7 +19,7 @@ well made, about the book, its author, its world or its ideas. Reject clickbait,
 videos, AI-generated slideshows, audiobook excerpts and anything off-topic. It is fine to
 pick none.
 
-For each pick, give "why": one line on what the viewer will get from it, and "block":
+For each pick, give "why": one line in {language} on what the viewer will get from it, and "block":
 the index of the block it fits best, or null if it suits the book in general.
 
 Blocks:
@@ -76,7 +76,8 @@ def find(title: str, author: str, summary: str, queries: list[str], blocks: list
     video_lines = "\n".join(
         f"{c['id']} | {c['title']} | {c['channel']} | {c['seconds'] // 60} min | {c['views']} views | {c['description']}"
         for c in candidates)
-    reply = ask_json(SCREEN_PROMPT.format(title=title, author=author, summary=summary or "",
+    language = {"es": "Spanish", "fr": "French", "de": "German"}.get(lang, "English")
+    reply = ask_json(SCREEN_PROMPT.format(title=title, author=author, summary=summary or "", language=language,
                                           blocks=block_lines, videos=video_lines), max_tokens=4000)
     by_id = {c["id"]: c for c in candidates}
     picks = []

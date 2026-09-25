@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -185,7 +186,7 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
 
     lookup?.let { current ->
         ModalBottomSheet(onDismissRequest = { lookup = null }) {
-            Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
+            Column(Modifier.navigationBarsPadding().padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
                 Text("“${current.text.take(300)}”", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(12.dp))
                 when {
@@ -206,7 +207,8 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
 @Composable
 fun MusicPrompts(prompts: List<Pair<String, String>>) {
     val context = LocalContext.current
-    Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(Modifier.navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text("Music to read by", style = MaterialTheme.typography.titleLarge)
         Text("Tap a prompt to copy it and open Spotify, then paste it into AI Playlist.",
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
