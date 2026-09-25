@@ -1,8 +1,14 @@
+# Secrets
 .env
-*.apk
+# Private or bulky pipeline data: downloaded books, built packs, personal feed/shelf lists
+cache/
+packs/
+# Build output
 build/
 .gradle/
 local.properties
-app/.idea/
-prep/cache/
-packs/
+*.apk
+__pycache__/
+*.pyc
+.idea/
+.DS_Store
