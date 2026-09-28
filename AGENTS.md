@@ -31,10 +31,10 @@ they are served as short, self-contained passages under a daily time budget.
 
 ## Build and install
 
-Connect with `~/best/fun/adb-phone`. Set `JAVA_HOME` to
+Connect with `~/best/dotfiles/bin/adb-phone`. Set `JAVA_HOME` to
 `/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home` and `ANDROID_HOME`
 to `~/Library/Android/sdk`, run `./gradlew assembleDebug`, then
-`~/best/fun/adb-phone install -r app/build/outputs/apk/debug/app-debug.apk`.
+`~/best/dotfiles/bin/adb-phone install -r app/build/outputs/apk/debug/app-debug.apk`.
 The README covers adding books and feeds.
 
 ## Secrets

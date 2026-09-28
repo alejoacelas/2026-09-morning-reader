@@ -8,13 +8,13 @@ the time left today.
 ## Build and install
 
 Requires JDK 17 and the Android SDK (see `AGENTS.md` for paths) and the phone
-reachable through `~/best/fun/adb-phone`.
+reachable through `~/best/dotfiles/bin/adb-phone`.
 
 ```bash
 export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
 export ANDROID_HOME=~/Library/Android/sdk
 ./gradlew assembleDebug
-~/best/fun/adb-phone install -r app/build/outputs/apk/debug/app-debug.apk
+~/best/dotfiles/bin/adb-phone install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
 ## Add books
