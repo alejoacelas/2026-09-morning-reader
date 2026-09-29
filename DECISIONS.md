@@ -15,25 +15,25 @@
 - "Dip in" picks rotate among a book's three earliest unread entry points, so a
   cold start never lands on a novel's ending.
 
-### Do the heavy work once, on the Mac
+### Prepare books on the computer
 
 - `./pack` segments each book with Gemini once and pushes a JSON pack. The phone
   only calls the model for highlight lookups and blog-post hooks, so mornings don't
   depend on the Mac.
 - Hooks, recaps, summaries and highlight answers are written in the book's
   language.
-- Gemini 3.8 Flash via OpenRouter, with minimal reasoning for lookups, at the
-  user's request.
+- Gemini 3.8 Flash via OpenRouter, with minimal reasoning for lookups.
 
 ### Keep private lists out of the public repository
 
-- The repository is public. Feed lists, reading lists and downloads live in the
-  ignored `cache/`, and keys live in `.env`.
+- Keep shareable source separate from personal data. Feed lists, reading lists
+  and downloads live in ignored `cache/`; generated packs live in `packs/` and
+  keys in `.env`. Built APKs contain the OpenRouter key and must stay private.
 
 ## Open questions
 
-- **How to suggest further books.** The first shelf is a fixed, hand-picked list
-  from the user's to-read list (`STARTER` in `packer/__main__.py`). There are no
+- **How to suggest further books.** The first shelf is a fixed example list
+  (`STARTER` in `packer/__main__.py`). There are no
   criteria or recommendation logic for choosing more; add books with `./pack add`
   until this is decided.
 
@@ -41,9 +41,9 @@
 
 ### Keep stories and poems whole
 
-The user asked that a block be one or more whole stories, or a few whole poems.
-This outranks the 15-minute ceiling: in Quiroga's collection, two stories run
-about 26 and 31 minutes. The budget rule still applies to them.
+Splitting a story or poem can break its meaning. When the packer identifies a
+whole work, preserving it outranks the 15-minute target. The daily budget rule
+still applies to longer blocks.
 
 ## Log
 
@@ -51,4 +51,9 @@ about 26 and 31 minutes. The budget rule still applies to them.
 
 First shelf: Middlemarch, Mill's Autobiography, Quiroga's *Cuentos de amor de
 locura y de muerte*, Lorca's *Romancero gitano*, Frankenstein, Anna Karenina, The
-Trial and The Mysterious Affair at Styles, chosen from the user's to-read list.
+Trial and The Mysterious Affair at Styles form the fixed example shelf.
+
+### 2026-09-29
+
+Use standard `adb` for transfers, with `ADB` for an alternate executable and
+`ANDROID_SERIAL` for device selection, so adopters need no personal helper.
