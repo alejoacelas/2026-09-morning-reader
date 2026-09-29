@@ -15,11 +15,11 @@
 - "Dip in" picks rotate among a book's three earliest unread entry points, so a
   cold start never lands on a novel's ending.
 
-### Do the heavy work once, on the Mac
+### Do the heavy work once, on the computer
 
 - `./pack` segments each book with Gemini once and pushes a JSON pack. The phone
   only calls the model for highlight lookups and blog-post hooks, so mornings don't
-  depend on the Mac.
+  depend on the computer.
 - Hooks, recaps, summaries and highlight answers are written in the book's
   language.
 - Gemini 3.8 Flash via OpenRouter, with minimal reasoning for lookups, at the
@@ -33,7 +33,7 @@
 ## Open questions
 
 - **How to suggest further books.** The first shelf is a fixed, hand-picked list
-  from the user's to-read list (`STARTER` in `packer/__main__.py`). There are no
+  stored as `STARTER` in `packer/__main__.py`. There are no
   criteria or recommendation logic for choosing more; add books with `./pack add`
   until this is decided.
 
@@ -51,4 +51,10 @@ about 26 and 31 minutes. The budget rule still applies to them.
 
 First shelf: Middlemarch, Mill's Autobiography, Quiroga's *Cuentos de amor de
 locura y de muerte*, Lorca's *Romancero gitano*, Frankenstein, Anna Karenina, The
-Trial and The Mysterious Affair at Styles, chosen from the user's to-read list.
+Trial and The Mysterious Affair at Styles.
+
+### 2026-09-29
+
+Adopter setup uses standard ADB on PATH, with an optional `ADB` executable override,
+and each reader's own API keys. Author-specific credential locations stay outside
+the shared documentation. An app-wide reuse license remains an owner decision.
