@@ -12,3 +12,6 @@ __pycache__/
 *.pyc
 .idea/
 .DS_Store
+
+# Local Python environment
+.venv/

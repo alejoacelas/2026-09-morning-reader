@@ -11,6 +11,7 @@
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -23,10 +24,10 @@ ROOT = Path(__file__).resolve().parent.parent
 PACKS = ROOT / "packs"
 PACKAGE = "com.alejoacelas.morningreader"
 PHONE_DIR = f"/sdcard/Android/data/{PACKAGE}/files"
-ADB_PHONE = Path.home() / "best/fun/adb-phone"
+ADB_PHONE = os.environ.get("ADB", "adb")
 
-# The first shelf, hand-picked from the user's to-read list. How to suggest further
-# books is an open question (see DECISIONS.md).
+# A fixed example shelf. How to suggest further books is an open question
+# (see DECISIONS.md).
 STARTER = {
     145: "Middlemarch",
     10378: "Autobiography of John Stuart Mill",

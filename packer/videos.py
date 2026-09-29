@@ -44,8 +44,8 @@ def find(title: str, author: str, summary: str, queries: list[str], blocks: list
          lang: str = "en") -> list[dict]:
     key = _env("YOUTUBE_API_KEY")
     ids: list[str] = []
-    # Each search costs 100 of the 10,000 daily quota units: four medium (4-20 min)
-    # searches plus one short (under 4 min) keeps a book at 500.
+    # Up to five searches: four medium (4-20 min) and one short (under 4 min).
+    # Current quota details are linked from the README.
     searches = [(q, "medium", 8) for q in queries[:4]] + [(q, "short", 4) for q in queries[:1]]
     for query, duration, count in searches:
         resp = httpx.get(f"{API}/search", timeout=30, params={
