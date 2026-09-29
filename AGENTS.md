@@ -1,50 +1,52 @@
 # Morning reader
 
-An Android app that replaces a morning feed of Twitter and blogs with a finite
-session of reading blocks. It explores whether books can compete with feeds when
-they are served as short, self-contained passages under a daily time budget.
-
-## How it works
-
-- A **block** is a passage of about 5–15 minutes from a book, a blog post of 5
-  minutes or more, or a video of 10 minutes or less. Short stories and poems stay
-  whole, so a block is one or more whole stories or a few whole poems.
-- The home screen is today's session: blocks from several books and blogs, each
-  with a one-line hook and an estimated time. A block can start only if time used
-  today plus its estimate fits the daily budget (45 minutes by default). The block
-  in progress can always be finished.
-- Estimates use the reader's measured words per minute.
-- Selecting text and tapping **Explain** defines 1–2 words or explains a longer
-  passage, in the language of the text.
-- Each block and book has Spotify AI Playlist prompts. The app copies one and opens
-  Spotify, since Spotify has no API for AI Playlists.
+An Android reading prototype: finite daily sessions of book passages, long blog
+posts and short videos. See [README.md](README.md) for adopter setup and
+[DECISIONS.md](DECISIONS.md) for design constraints.
 
 ## Layout
 
-- `app/` — the Android app (Kotlin, Jetpack Compose). It fetches blog feeds and
-  calls the model itself, so mornings don't need the Mac.
-- `packer/` and `./pack` — Mac-side book preparation: Gutenberg search, Standard
-  Ebooks edition when one exists, Gemini segmentation, YouTube picks, push to phone.
-- `docs/book-pack.md` — the book pack format both sides share.
-- `cache/` and `packs/` are ignored. `cache/` holds downloads and the user's
-  private feed and reading lists; never commit it.
+- `app/`: Kotlin/Jetpack Compose app; fetches feeds and calls OpenRouter directly.
+- `packer/` and `./pack`: Python book search, EPUB extraction, model segmentation,
+  YouTube discovery and transfer through ADB.
+- `docs/book-pack.md`: shared JSON format; keep producer, consumer and docs aligned.
+- `cache/`, `packs/`, `.env`: ignored downloads, personal data and keys.
 
-## Build and install
+## Setup and checks
 
-Connect with `~/best/dotfiles/bin/adb-phone`. Set `JAVA_HOME` to
-`/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home` and `ANDROID_HOME`
-to `~/Library/Android/sdk`, run `./gradlew assembleDebug`, then
-`~/best/dotfiles/bin/adb-phone install -r app/build/outputs/apk/debug/app-debug.apk`.
-The README covers adding books and feeds.
+Use the reader's JDK 17 and Android SDK, with Platform 37 installed. Run commands
+from the repository root. Use `adb` from PATH; `ANDROID_SERIAL` selects a device.
+The packer accepts `ADB=/path/to/wrapper` for an optional connection helper.
+Do not assume the author's tools, accounts or filesystem paths exist.
 
-## Secrets
+- `uv sync --locked` and `./pack --help`: install and inspect the Python CLI.
+- `./pack search "frankenstein"`: public catalog check, without paid API calls.
+- `./gradlew assembleDebug`: compile the Android app; no paid API calls.
+- With permission to use the target device, `adb install -r
+  app/build/outputs/apk/debug/app-debug.apk`, then open the app once before transfer.
 
-Load keys into the ignored `.env` as the README shows, from the personal
-1Password account (`my.1password.com`), vault `Personal`, field `credential`:
+There is no automated test suite. For changes to book transfer, check the ADB
+arguments with a stub before using a device. For changes to the reading flow,
+verify on Android and distinguish checks run from behavior inferred from code.
 
-- `OPENROUTER_API_KEY` — item `OPENROUTER_API_KEY — 2026-09-morning-reader`
-- `YOUTUBE_API_KEY` — item `YOUTUBE_API_KEY — 2026-09-morning-reader`
-  (Google Cloud project `morning-reader-27191`, account `alejoacelas@gmail.com`)
+## Credentials and external actions
 
-The OpenRouter key is compiled into the APK, so never publish a built APK. The
-model is `google/gemini-3.8-flash`.
+The reader supplies `OPENROUTER_API_KEY` and `YOUTUBE_API_KEY` in ignored `.env`,
+using `.env.example` as the template. Never retrieve the author's credentials.
+Private password-manager rebuild notes belong outside this repository.
+
+OpenRouter keys are embedded in APKs, including release builds (which currently
+use debug signing). Never commit or publish APKs or keys. Rebuild after key changes.
+The configured model appears in `packer/llm.py` and the app's `Ai.kt`.
+
+Book preparation, video retries and phone AI features incur API usage. Obtain the
+reader's authorization before spending their credit or changing cloud resources.
+Do not add feeds, reading lists, downloads or generated packs to Git. The owner
+still needs to choose an app-wide reuse license; do not choose one on their behalf.
+
+## Reading constraints
+
+The daily budget limits which blocks may start; the current block may finish.
+Preserve whole stories and poems even when they exceed the usual 15-minute target.
+Write hooks, recaps, summaries and explanations in the text's language. Keep cold
+starts among the earliest unread entry points to avoid late-book spoilers.

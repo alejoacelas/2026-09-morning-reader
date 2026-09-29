@@ -11,6 +11,7 @@
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -23,10 +24,10 @@ ROOT = Path(__file__).resolve().parent.parent
 PACKS = ROOT / "packs"
 PACKAGE = "com.alejoacelas.morningreader"
 PHONE_DIR = f"/sdcard/Android/data/{PACKAGE}/files"
-ADB_PHONE = Path.home() / "best/fun/adb-phone"
+ADB = os.environ.get("ADB", "adb")
 
-# The first shelf, hand-picked from the user's to-read list. How to suggest further
-# books is an open question (see DECISIONS.md).
+# The fixed first shelf. How to suggest further books is an open question
+# (see DECISIONS.md).
 STARTER = {
     145: "Middlemarch",
     10378: "Autobiography of John Stuart Mill",
@@ -102,7 +103,7 @@ def add_videos(pack: dict) -> None:
 
 
 def push(paths: list[Path], subdir: str = "packs") -> None:
-    adb = [str(ADB_PHONE)]
+    adb = [ADB]
     # The app must create its own folder: one made by adb belongs to the shell user and
     # the app can't read it. Opening the app once creates it.
     if subprocess.run(adb + ["shell", "test", "-d", f"{PHONE_DIR}/{subdir}"]).returncode != 0:
