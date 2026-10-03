@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -46,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -75,8 +77,9 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
         Text("This block is no longer available.", Modifier.padding(24.dp)); return
     }
     val state by Store.state.collectAsState()
+    // A resumed block reopens where it was left; any other block opens at the top.
     val startScroll = remember(itemId) { Store.state.value.inProgress?.takeIf { it.itemId == itemId }?.scroll ?: 0 }
-    val scroll = rememberScrollState(startScroll)
+    val scroll = remember(itemId) { ScrollState(startScroll) }
     var lastInteraction by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var finished by remember(itemId) { mutableStateOf(itemId in Store.state.value.finished && Store.state.value.inProgress?.itemId != itemId) }
     var lookup by remember { mutableStateOf<Lookup?>(null) }
@@ -157,11 +160,12 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
                     }
                 }
                 Spacer(Modifier.height(18.dp))
-                BlockText(item, colors.onBackground.toArgb(), colors.primary.toArgb()) { selection, paragraph ->
+                BlockText(item, colors.onBackground.toArgb(), colors.primary.toArgb()) { sel ->
                     lastInteraction = System.currentTimeMillis()
+                    val selection = sel.text
                     lookup = Lookup(selection)
                     scope.launch {
-                        lookup = runCatching { Ai.explain(selection, paragraph, item.source, item.language) }.fold(
+                        lookup = runCatching { Ai.explain(selection, sel.context, item.source, item.language) }.fold(
                             { answer ->
                                 Store.update { s ->
                                     s.copy(highlights = listOf(Highlight(selection, answer, item.source + " · " + item.title,
@@ -267,11 +271,17 @@ private fun AfterBlock(item: ReadItem, state: AppState) {
     OutlinedButton(onClick = { nav.top(Screen.Today) }, modifier = Modifier.fillMaxWidth()) { Text("Back to today") }
 }
 
-/** The passage as a native TextView, so selecting text can offer an "Explain" action. */
+/** A selection in a block, with the text around it to give the model context. */
+data class Selection(val text: String, val start: Int, val end: Int, val paragraph: Int, val context: String)
+
+/** The passage as a native TextView, so selecting text can offer Explain and the other actions. */
 @Composable
-private fun BlockText(item: ReadItem, textColor: Int, accent: Int, onExplain: (String, String) -> Unit) {
+private fun BlockText(item: ReadItem, textColor: Int, accent: Int, onExplain: (Selection) -> Unit) {
     val context = LocalContext.current
     val built = remember(item.id) { buildText(context.resources.getFont(R.font.literata), item.paragraphs) }
+    // The text view outlives recompositions, so its menu handler must read the current block, not the first one.
+    val currentBuilt by rememberUpdatedState(built)
+    val currentExplain by rememberUpdatedState(onExplain)
     AndroidView(
         modifier = Modifier.fillMaxWidth(),
         factory = { ctx ->
@@ -288,11 +298,7 @@ private fun BlockText(item: ReadItem, textColor: Int, accent: Int, onExplain: (S
                     override fun onPrepareActionMode(mode: ActionMode, menu: Menu) = false
                     override fun onActionItemClicked(mode: ActionMode, menuItem: MenuItem): Boolean {
                         if (menuItem.itemId != EXPLAIN_ID) return false
-                        val start = selectionStart.coerceAtLeast(0)
-                        val end = selectionEnd.coerceAtLeast(start)
-                        val selected = text.substring(start, end).trim()
-                        val paragraph = built.ranges.firstOrNull { start in it.first }?.second ?: selected
-                        if (selected.isNotEmpty()) onExplain(selected, paragraph)
+                        currentBuilt.selection(selectionStart, selectionEnd)?.let { currentExplain(it) }
                         mode.finish()
                         return true
                     }
@@ -310,7 +316,19 @@ private fun BlockText(item: ReadItem, textColor: Int, accent: Int, onExplain: (S
 
 private const val EXPLAIN_ID = 0x5e1
 
-private class BuiltText(val text: CharSequence, val ranges: List<Pair<IntRange, String>>)
+private class BuiltText(val text: CharSequence, val ranges: List<Pair<IntRange, String>>) {
+    /** The selected text plus the paragraph it starts in and its neighbours. */
+    fun selection(rawStart: Int, rawEnd: Int): Selection? {
+        val start = minOf(rawStart, rawEnd).coerceIn(0, text.length)
+        val end = maxOf(rawStart, rawEnd).coerceIn(start, text.length)
+        val selected = text.substring(start, end).trim()
+        if (selected.isEmpty()) return null
+        val index = ranges.indexOfFirst { start in it.first }.takeIf { it >= 0 }
+            ?: ranges.indexOfLast { it.first.first <= start }.coerceAtLeast(0)
+        val around = (index - 1..index + 1).mapNotNull { ranges.getOrNull(it)?.second?.take(1500) }
+        return Selection(selected, start, end, index, around.joinToString("\n\n"))
+    }
+}
 
 private fun buildText(font: Typeface, paragraphs: List<String>): BuiltText {
     val out = SpannableStringBuilder()

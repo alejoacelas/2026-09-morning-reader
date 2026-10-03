@@ -60,7 +60,7 @@ object Ai {
         val prompt = """
             Someone is reading "$source" and highlighted: "$selection"
 
-            The paragraph it comes from:
+            The text around it (the paragraph it is in, with the paragraphs before and after):
             $paragraph
 
             $task Answer in ${language ?: "the language of the paragraph"}. Plain text, no preamble, no markdown.

@@ -21,6 +21,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -122,7 +123,8 @@ private fun AppRoot() {
                 Screen.Highlights -> HighlightsScreen(modifier)
                 Screen.Settings -> SettingsScreen(modifier)
                 is Screen.Book -> BookScreen(current.id, modifier)
-                is Screen.Reader -> ReaderScreen(current.itemId, modifier)
+                // Keyed so each block gets fresh state (scroll position, text view, selection handler).
+                is Screen.Reader -> key(current.itemId) { ReaderScreen(current.itemId, modifier) }
             }
         }
     }
