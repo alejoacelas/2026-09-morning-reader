@@ -7,6 +7,7 @@
   ./pack push                         push every built pack to the phone
   ./pack videos [ID ...]              find videos for packs that have none (YouTube quota)
   ./pack opml FILE                    push a feed list (OPML) for the app to import
+  ./pack pull                         copy notes, highlights and shortfalls from the phone
 """
 
 import argparse
@@ -131,6 +132,7 @@ def main() -> None:
     vids = sub.add_parser("videos", help="find videos for built packs that have none")
     vids.add_argument("ids", nargs="*", help="Gutenberg ids (default: every pack without videos)")
     sub.add_parser("opml", help="push an OPML feed list").add_argument("file", type=Path)
+    sub.add_parser("pull", help="copy notes, highlights and shortfalls from the phone into cache/phone/")
     args = parser.parse_args()
 
     if args.command == "search":
@@ -168,6 +170,11 @@ def main() -> None:
         push(sorted(PACKS.glob("*.json")))
     elif args.command == "opml":
         push([args.file], subdir="import")
+    elif args.command == "pull":
+        out = ROOT / "cache" / "phone"
+        out.mkdir(parents=True, exist_ok=True)
+        subprocess.run([str(ADB_PHONE), "pull", f"{PHONE_DIR}/exports/.", str(out)], check=True)
+        print(f"Saved to {out.relative_to(ROOT)}/ (notes.jsonl, highlights.json, shortfalls.json)")
 
 
 if __name__ == "__main__":

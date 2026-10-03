@@ -42,6 +42,21 @@ data class Block(
 @Serializable
 data class Character(val name: String, val note: String)
 
+/** A private note on a passage, saved for export and never shown while reading. */
+@Serializable
+data class Note(
+    val at: Long,
+    val itemId: String,
+    val bookId: String? = null,
+    val source: String,
+    val blockTitle: String,
+    val paragraph: Int,
+    val start: Int,
+    val end: Int,
+    val selection: String,
+    val note: String,
+)
+
 /** A time the session had minutes left but nothing short enough to fill them. */
 @Serializable
 data class Shortfall(val day: String, val minutesLeft: Int, val at: Long)

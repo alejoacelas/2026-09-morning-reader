@@ -10,6 +10,14 @@ import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.TextView
+import android.widget.Toast
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -67,7 +75,7 @@ import kotlinx.coroutines.launch
 /** Reading pauses longer than this stop counting toward time used. */
 private const val IDLE_MS = 150_000L
 
-private data class Lookup(val text: String, val answer: String? = null, val error: String? = null)
+private data class Lookup(val text: String, val question: String? = null, val answer: String? = null, val error: String? = null)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,6 +93,8 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
     var lastInteraction by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var finished by remember(itemId) { mutableStateOf(itemId in Store.state.value.finished && Store.state.value.inProgress?.itemId != itemId) }
     var lookup by remember { mutableStateOf<Lookup?>(null) }
+    var asking by remember { mutableStateOf<Selection?>(null) }
+    var noting by remember { mutableStateOf<Selection?>(null) }
     var showMusic by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -118,6 +128,27 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
                     )
                 }
             }
+        }
+    }
+
+    /** Explain (no question) or answer a typed question about a selection, and keep it in Highlights. */
+    fun lookUp(sel: Selection, question: String?) {
+        lookup = Lookup(sel.text, question = question)
+        scope.launch {
+            lookup = runCatching {
+                if (question == null) Ai.explain(sel.text, sel.context, item.source, item.language)
+                else Ai.answer(question, sel.text, sel.context, item.source, item.language)
+            }.fold(
+                { answer ->
+                    val saved = if (question == null) answer else "Q: $question\n$answer"
+                    Store.update { s ->
+                        s.copy(highlights = listOf(Highlight(sel.text, saved, item.source + " · " + item.title,
+                            System.currentTimeMillis())) + s.highlights)
+                    }
+                    Lookup(sel.text, question = question, answer = answer)
+                },
+                { Lookup(sel.text, question = question, error = it.message ?: "Lookup failed") },
+            )
         }
     }
 
@@ -175,21 +206,12 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
                     }
                 }
                 Spacer(Modifier.height(18.dp))
-                BlockText(item, colors.onBackground.toArgb(), colors.primary.toArgb()) { sel ->
+                BlockText(item, colors.onBackground.toArgb(), colors.primary.toArgb()) { action, sel ->
                     lastInteraction = System.currentTimeMillis()
-                    val selection = sel.text
-                    lookup = Lookup(selection)
-                    scope.launch {
-                        lookup = runCatching { Ai.explain(selection, sel.context, item.source, item.language) }.fold(
-                            { answer ->
-                                Store.update { s ->
-                                    s.copy(highlights = listOf(Highlight(selection, answer, item.source + " · " + item.title,
-                                        System.currentTimeMillis())) + s.highlights)
-                                }
-                                Lookup(selection, answer = answer)
-                            },
-                            { Lookup(selection, error = it.message ?: "Lookup failed") },
-                        )
+                    when (action) {
+                        SelectionAction.Explain -> lookUp(sel, null)
+                        SelectionAction.Ask -> asking = sel
+                        SelectionAction.Note -> noting = sel
                     }
                 }
                 Spacer(Modifier.height(28.dp))
@@ -207,6 +229,10 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
         ModalBottomSheet(onDismissRequest = { lookup = null }) {
             Column(Modifier.navigationBarsPadding().padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
                 Text("“${current.text.take(300)}”", style = MaterialTheme.typography.titleMedium)
+                current.question?.let {
+                    Spacer(Modifier.height(8.dp))
+                    Text(it, style = MaterialTheme.typography.labelLarge, color = colors.primary)
+                }
                 Spacer(Modifier.height(12.dp))
                 when {
                     current.answer != null -> Text(current.answer, style = MaterialTheme.typography.bodyLarge)
@@ -216,11 +242,47 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
             }
         }
     }
+    asking?.let { sel ->
+        TextPrompt(title = "Ask about “${sel.text.take(60)}”", label = "Your question", singleLine = true,
+            confirm = "Ask", onDismiss = { asking = null }) { question ->
+            asking = null
+            lookUp(sel, question)
+        }
+    }
+    noting?.let { sel ->
+        TextPrompt(title = "Note on “${sel.text.take(60)}”", label = "Note", singleLine = false,
+            confirm = "Save", onDismiss = { noting = null }) { text ->
+            noting = null
+            Store.saveNote(Note(System.currentTimeMillis(), item.id, item.bookId, item.source, item.title,
+                sel.paragraph, sel.start, sel.end, sel.text, text))
+            Toast.makeText(context, "Note saved", Toast.LENGTH_SHORT).show()
+        }
+    }
     if (showMusic) {
         ModalBottomSheet(onDismissRequest = { showMusic = false }) {
             MusicPrompts(item.playlistPrompts)
         }
     }
+}
+
+@Composable
+private fun TextPrompt(title: String, label: String, singleLine: Boolean, confirm: String,
+                       onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+    var text by remember { mutableStateOf("") }
+    val focus = remember { FocusRequester() }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title, style = MaterialTheme.typography.titleMedium) },
+        text = {
+            OutlinedTextField(text, { text = it }, label = { Text(label) }, singleLine = singleLine,
+                minLines = if (singleLine) 1 else 3, modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                keyboardOptions = KeyboardOptions(imeAction = if (singleLine) ImeAction.Send else ImeAction.Default),
+                keyboardActions = KeyboardActions(onSend = { if (text.isNotBlank()) onConfirm(text.trim()) }))
+        },
+        confirmButton = { TextButton(enabled = text.isNotBlank(), onClick = { onConfirm(text.trim()) }) { Text(confirm) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+    LaunchedEffect(Unit) { focus.requestFocus() }
 }
 
 @Composable
@@ -291,12 +353,12 @@ data class Selection(val text: String, val start: Int, val end: Int, val paragra
 
 /** The passage as a native TextView, so selecting text can offer Explain and the other actions. */
 @Composable
-private fun BlockText(item: ReadItem, textColor: Int, accent: Int, onExplain: (Selection) -> Unit) {
+private fun BlockText(item: ReadItem, textColor: Int, accent: Int, onAction: (SelectionAction, Selection) -> Unit) {
     val context = LocalContext.current
     val built = remember(item.id) { buildText(context.resources.getFont(R.font.literata), item.paragraphs) }
     // The text view outlives recompositions, so its menu handler must read the current block, not the first one.
     val currentBuilt by rememberUpdatedState(built)
-    val currentExplain by rememberUpdatedState(onExplain)
+    val currentAction by rememberUpdatedState(onAction)
     AndroidView(
         modifier = Modifier.fillMaxWidth(),
         factory = { ctx ->
@@ -307,13 +369,15 @@ private fun BlockText(item: ReadItem, textColor: Int, accent: Int, onExplain: (S
                 setTextIsSelectable(true)
                 customSelectionActionModeCallback = object : ActionMode.Callback {
                     override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
-                        menu.add(Menu.NONE, EXPLAIN_ID, 0, "Explain").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+                        SelectionAction.entries.forEachIndexed { i, action ->
+                            menu.add(Menu.NONE, action.menuId, i, action.label).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+                        }
                         return true
                     }
                     override fun onPrepareActionMode(mode: ActionMode, menu: Menu) = false
                     override fun onActionItemClicked(mode: ActionMode, menuItem: MenuItem): Boolean {
-                        if (menuItem.itemId != EXPLAIN_ID) return false
-                        currentBuilt.selection(selectionStart, selectionEnd)?.let { currentExplain(it) }
+                        val action = SelectionAction.entries.firstOrNull { it.menuId == menuItem.itemId } ?: return false
+                        currentBuilt.selection(selectionStart, selectionEnd)?.let { currentAction(action, it) }
                         mode.finish()
                         return true
                     }
@@ -329,7 +393,9 @@ private fun BlockText(item: ReadItem, textColor: Int, accent: Int, onExplain: (S
     )
 }
 
-private const val EXPLAIN_ID = 0x5e1
+enum class SelectionAction(val label: String, val menuId: Int) {
+    Explain("Explain", 0x5e1), Ask("Ask", 0x5e2), Note("Note", 0x5e3)
+}
 
 private class BuiltText(val text: CharSequence, val ranges: List<Pair<IntRange, String>>) {
     /** The selected text plus the paragraph it starts in and its neighbours. */

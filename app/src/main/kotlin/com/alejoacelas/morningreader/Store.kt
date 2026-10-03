@@ -172,6 +172,25 @@ object Store {
         )
     }
 
+    /** Phone-side exports, readable over adb at Android/data/<package>/files/exports/. */
+    val exportsDir: File get() = File(appContext.getExternalFilesDir(null), "exports").apply { mkdirs() }
+
+    fun saveNote(note: Note) = scope.launch {
+        synchronized(this@Store) {
+            File(exportsDir, "notes.jsonl").appendText(json.encodeToString(Note.serializer(), note) + "\n")
+        }
+    }
+
+    /** Writes highlights and shortfalls next to the notes so one `adb pull` gets everything. */
+    fun writeExports() = scope.launch {
+        val s = _state.value
+        val pretty = Json { prettyPrint = true; encodeDefaults = true }
+        File(exportsDir, "highlights.json").writeText(
+            pretty.encodeToString(kotlinx.serialization.builtins.ListSerializer(Highlight.serializer()), s.highlights))
+        File(exportsDir, "shortfalls.json").writeText(
+            pretty.encodeToString(kotlinx.serialization.builtins.ListSerializer(Shortfall.serializer()), s.shortfalls))
+    }
+
     fun recordShortfall(minutesLeft: Int) = update { s ->
         if (s.shortfalls.any { it.day == s.day && it.minutesLeft == minutesLeft }) s
         else s.copy(shortfalls = (s.shortfalls + Shortfall(s.day, minutesLeft, System.currentTimeMillis())).takeLast(500))

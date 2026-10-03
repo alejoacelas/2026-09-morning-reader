@@ -85,6 +85,11 @@ class MainActivity : ComponentActivity() {
         setContent { ReaderTheme { AppRoot() } }
     }
 
+    override fun onStop() {
+        super.onStop()
+        Store.writeExports()
+    }
+
     override fun onResume() {
         super.onResume()
         Store.reloadIfChanged()

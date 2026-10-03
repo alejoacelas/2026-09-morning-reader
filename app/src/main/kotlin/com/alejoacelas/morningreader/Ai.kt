@@ -68,6 +68,23 @@ object Ai {
         return ask(prompt, maxTokens = 400)
     }
 
+    /** A typed question about a selection, with the same context Explain gets. */
+    suspend fun answer(question: String, selection: String, paragraph: String, source: String, language: String?): String {
+        val prompt = """
+            Someone is reading "$source" and selected: "$selection"
+
+            The text around it (the paragraph it is in, with the paragraphs before and after):
+            $paragraph
+
+            Their question about it: $question
+
+            Answer in two to five sentences, in ${language ?: "the language of the paragraph"} unless the
+            question is in another language, in which case use the question's language. Use only what
+            the text so far reveals; don't give away later events. Plain text, no preamble, no markdown.
+        """.trimIndent()
+        return ask(prompt, maxTokens = 500)
+    }
+
     /** A hook line and a Spotify AI Playlist prompt for a blog post. */
     suspend fun postHook(title: String, feed: String, text: String): Pair<String, String> {
         val prompt = """
