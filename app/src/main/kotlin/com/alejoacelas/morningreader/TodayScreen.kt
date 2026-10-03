@@ -17,6 +17,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Card
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -103,12 +107,38 @@ fun TodayScreen(modifier: Modifier) {
                 style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 24.dp),
             )
         }
-        items(cards, key = { it.key }) { card -> SessionCard(card, fits = Store.canStart(card.key, card.minutes)) }
+        items(cards, key = { it.key }) { card ->
+            val archiving = Store.archiveKey(card) in state.pendingArchive
+            SwipeToArchive(archiving, onSwipe = { Store.toggleArchive(Store.archiveKey(card)) }) {
+                SessionCard(card, fits = Store.canStart(card.key, card.minutes), archiving = archiving)
+            }
+        }
     }
 }
 
+/** Swiping right to left greys a card out (or back in); the archive happens at the next reload. */
 @Composable
-fun SessionCard(card: Card, fits: Boolean) {
+private fun SwipeToArchive(archiving: Boolean, onSwipe: () -> Unit, content: @Composable () -> Unit) {
+    val state = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) onSwipe()
+            false // always spring back; the card stays until the next reload
+        },
+    )
+    SwipeToDismissBox(
+        state = state,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = {
+            Box(Modifier.fillMaxSize().padding(end = 24.dp), contentAlignment = Alignment.CenterEnd) {
+                Text(if (archiving) "Keep" else "Archive", style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary)
+            }
+        },
+    ) { content() }
+}
+
+@Composable
+fun SessionCard(card: Card, fits: Boolean, archiving: Boolean = false) {
     val nav = LocalNav.current
     val (label, title, hook, source) = when (card) {
         is Card.Reading -> listOf(card.label, card.item.title, card.item.hook, card.item.source)
@@ -121,7 +151,7 @@ fun SessionCard(card: Card, fits: Boolean) {
                 is Card.Watch -> nav.watch(card.video)
             }
         },
-        modifier = Modifier.fillMaxWidth().alpha(if (fits) 1f else 0.45f),
+        modifier = Modifier.fillMaxWidth().alpha(if (archiving) 0.25f else if (fits) 1f else 0.45f),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
     ) {
@@ -142,7 +172,11 @@ fun SessionCard(card: Card, fits: Boolean) {
             }
             Spacer(Modifier.height(10.dp))
             Text(
-                "About ${card.minutes} min" + if (!fits) " · past today's limit" else "",
+                "About ${card.minutes} min" + when {
+                    archiving -> " · archived at the next refresh (swipe again to keep)"
+                    !fits -> " · past today's limit"
+                    else -> ""
+                },
                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }

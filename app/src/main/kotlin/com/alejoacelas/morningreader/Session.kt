@@ -18,7 +18,10 @@ sealed interface Card {
 
 /** Builds today's mix: what's in progress, then books and posts interleaved, with a video or two. */
 object Session {
-    fun cards(state: AppState, books: List<BookPack>, posts: List<BlogPost>): List<Card> = with(Store) {
+    fun cards(state: AppState, allBooks: List<BookPack>, allPosts: List<BlogPost>): List<Card> = with(Store) {
+        val books = allBooks.filter { it.id !in state.archived }
+            .map { b -> b.copy(videos = b.videos.filter { "video-" + it.youtubeId !in state.archived }) }
+        val posts = allPosts.filter { it.id !in state.archived }
         val daySeed = state.day.hashCode()
         val cards = mutableListOf<Card>()
         state.inProgress?.let { progress ->

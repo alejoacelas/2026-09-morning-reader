@@ -92,7 +92,7 @@ object Store {
             importOpml(f.readText())
             f.renameTo(File(f.parentFile, f.name + ".imported"))
         }
-        update { it }
+        applyArchive()
         packsSignature = currentSignature()
         loaded.value = true
     }
@@ -190,6 +190,26 @@ object Store {
             pretty.encodeToString(kotlinx.serialization.builtins.ListSerializer(Highlight.serializer()), s.highlights))
         File(exportsDir, "shortfalls.json").writeText(
             pretty.encodeToString(kotlinx.serialization.builtins.ListSerializer(Shortfall.serializer()), s.shortfalls))
+    }
+
+    /** What a swipe on this card archives: the whole book, the whole post, or one video. */
+    fun archiveKey(card: Card): String = when (card) {
+        is Card.Reading -> card.item.bookId ?: card.item.id
+        is Card.Watch -> card.key
+    }
+
+    fun toggleArchive(key: String) = update { s ->
+        s.copy(pendingArchive = if (key in s.pendingArchive) s.pendingArchive - key else s.pendingArchive + key)
+    }
+
+    fun restore(key: String) = update { s -> s.copy(archived = s.archived - key, pendingArchive = s.pendingArchive - key) }
+
+    /** Moves swiped cards into the archive and drops a block in progress from an archived book. */
+    private fun applyArchive() = update { s ->
+        val archived = s.archived + s.pendingArchive
+        val progressItem = s.inProgress?.let { item(it.itemId) }
+        val dropProgress = progressItem != null && ((progressItem.bookId ?: progressItem.id) in archived)
+        s.copy(archived = archived, pendingArchive = emptySet(), inProgress = if (dropProgress) null else s.inProgress)
     }
 
     fun recordShortfall(minutesLeft: Int) = update { s ->

@@ -68,8 +68,12 @@ fun LibraryScreen(modifier: Modifier) {
                 Spacer(Modifier.height(4.dp))
                 Text(book.summary, style = MaterialTheme.typography.bodyMedium, maxLines = 3)
                 Spacer(Modifier.height(4.dp))
-                Text("$read of ${book.blocks.size} blocks read", style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("$read of ${book.blocks.size} blocks read" + if (book.id in state.archived) " · archived" else "",
+                        style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f))
+                    if (book.id in state.archived) TextButton(onClick = { Store.restore(book.id) }) { Text("Restore") }
+                }
             }
         }
     }

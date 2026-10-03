@@ -125,4 +125,7 @@ data class AppState(
     val lastBlogRefresh: Long = 0,
     val blogStatus: String = "",
     val shortfalls: List<Shortfall> = emptyList(),
+    /** Swiped away today; archived at the next reload. Book ids, post ids or "video-<id>". */
+    val pendingArchive: Set<String> = emptySet(),
+    val archived: Set<String> = emptySet(),
 )
