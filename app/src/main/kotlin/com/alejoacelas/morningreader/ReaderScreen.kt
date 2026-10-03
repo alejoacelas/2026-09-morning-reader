@@ -11,6 +11,9 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.TextView
 import android.widget.Toast
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
@@ -211,8 +214,8 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
                         style = MaterialTheme.typography.labelSmall, color = colors.primary)
                     item.characters.forEach { c ->
                         Text(
-                            androidx.compose.ui.text.buildAnnotatedString {
-                                withStyle(androidx.compose.ui.text.SpanStyle(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)) { append(c.name) }
+                            buildAnnotatedString {
+                                withStyle(SpanStyle(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)) { append(c.name) }
                                 append(" — " + c.note)
                             },
                             style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant,
