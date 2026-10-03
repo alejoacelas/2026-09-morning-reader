@@ -63,7 +63,10 @@ object Session {
             if (postIt.hasNext()) mixed += postIt.next()
         }
         videos.forEachIndexed { i, v -> mixed.add(minOf(mixed.size, 2 + i * 4), v) }
-        cards + fillers(state, books, posts, (cards + mixed).map { it.key }.toSet(), mixed) + mixed
+        val offered = fillers(state, books, posts, (cards + mixed).map { it.key }.toSet(), mixed) + mixed
+        // Near the end of the budget, put what still fits first.
+        val left = minutesLeft()
+        cards + if (left <= 15) offered.sortedBy { it.minutes > left } else offered
     }
 
     /**
@@ -73,7 +76,7 @@ object Session {
     private fun fillers(state: AppState, books: List<BookPack>, posts: List<BlogPost>, taken: Set<String>,
                         mixed: List<Card>): List<Card> = with(Store) {
         val left = minutesLeft()
-        if (left !in 1..15 || mixed.any { it.minutes <= left }) return emptyList()
+        if (left !in 1..15 || mixed.any { it is Card.Reading && it.minutes <= left }) return emptyList()
         val candidates = mutableListOf<Card>()
         books.forEach { book ->
             book.blocks.filter { (it.entryPoint || it.standalone) && it.id !in state.finished }
@@ -85,9 +88,9 @@ object Session {
             b.videos.filter { it.youtubeId !in state.watched }
                 .forEach { v -> candidates += Card.Watch(v, b, maxOf(1, ceil(v.seconds / 60.0).toInt())) }
         }
-        // Prefer the longest pieces that still fit, one per book or feed.
+        // Prefer reading over videos, then the longest pieces that still fit, one per book or feed.
         candidates.filter { it.minutes <= left && it.key !in taken }
-            .sortedByDescending { it.minutes }
+            .sortedWith(compareBy<Card> { it is Card.Watch }.thenByDescending { it.minutes })
             .distinctBy { if (it is Card.Reading) it.item.source else it.key }
             .take(3)
     }

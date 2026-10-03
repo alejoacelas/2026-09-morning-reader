@@ -52,7 +52,7 @@ fun TodayScreen(modifier: Modifier) {
     val posts by Store.posts.collectAsState()
     val loaded by Store.loaded.collectAsState()
     val cards = remember(state.day, state.finished, state.watched, state.inProgress?.itemId, books, posts, state.wordsPerMinute,
-        state.usedSecondsToday / 60, state.budgetMinutes) {
+        state.usedSecondsToday / 60, state.budgetMinutes, state.archived) {
         Session.cards(state, books, posts)
     }
     val refreshing by Blogs.running.collectAsState()
@@ -60,7 +60,7 @@ fun TodayScreen(modifier: Modifier) {
     val left = Store.minutesLeft()
     // Record each time there are 5-10 minutes left and nothing on offer fits them.
     LaunchedEffect(cards, left) {
-        if (loaded && left in 5..10 && cards.none { it.minutes <= left && it.key != state.inProgress?.itemId }) {
+        if (loaded && left in 5..10 && cards.none { it is Card.Reading && it.minutes <= left && it.key != state.inProgress?.itemId }) {
             Store.recordShortfall(left)
         }
     }
@@ -119,17 +119,18 @@ fun TodayScreen(modifier: Modifier) {
 /** Swiping right to left greys a card out (or back in); the archive happens at the next reload. */
 @Composable
 private fun SwipeToArchive(archiving: Boolean, onSwipe: () -> Unit, content: @Composable () -> Unit) {
-    val state = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) onSwipe()
-            false // always spring back; the card stays until the next reload
-        },
-    )
+    val state = rememberSwipeToDismissBoxState()
+    val scope = rememberCoroutineScope()
     SwipeToDismissBox(
         state = state,
         enableDismissFromStartToEnd = false,
+        onDismiss = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) onSwipe()
+            scope.launch { state.reset() } // spring back; the card stays until the next reload
+        },
         backgroundContent = {
-            Box(Modifier.fillMaxSize().padding(end = 24.dp), contentAlignment = Alignment.CenterEnd) {
+            // Only while swiping: dimmed cards are translucent and would show the label at rest.
+            if (state.dismissDirection == SwipeToDismissBoxValue.EndToStart) Box(Modifier.fillMaxSize().padding(end = 24.dp), contentAlignment = Alignment.CenterEnd) {
                 Text(if (archiving) "Keep" else "Archive", style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary)
             }
