@@ -1,9 +1,11 @@
 package com.alejoacelas.morningreader
 
 import android.content.ClipData
+import android.content.ActivityNotFoundException
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.widget.Toast
 import androidx.core.net.toUri
 
@@ -17,11 +19,29 @@ fun openSpotify(context: Context, prompt: String) {
     context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
-fun openVideo(context: Context, youtubeId: String) {
+/**
+ * Opens a video in the YouTube app if it can take it, otherwise in a browser. Every place that
+ * shows a video goes through here. Returns false (after telling the user) if nothing could open it.
+ */
+fun openVideo(context: Context, youtubeId: String): Boolean {
     val url = "https://www.youtube.com/watch?v=$youtubeId".toUri()
-    val app = Intent(Intent.ACTION_VIEW, url).setPackage("com.google.android.youtube")
-    val intent = if (app.resolveActivity(context.packageManager) != null) app else Intent(Intent.ACTION_VIEW, url)
-    context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    val attempts = listOf(
+        Intent(Intent.ACTION_VIEW, url).setPackage("com.google.android.youtube"),
+        Intent(Intent.ACTION_VIEW, url).addCategory(Intent.CATEGORY_BROWSABLE),
+        Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_BROWSER).setData(url),
+    )
+    for (intent in attempts) {
+        try {
+            context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return true
+        } catch (e: ActivityNotFoundException) {
+            Log.w("Actions", "can't open video with $intent", e)
+        } catch (e: SecurityException) {
+            Log.w("Actions", "can't open video with $intent", e)
+        }
+    }
+    Toast.makeText(context, "No app on this phone can open $url", Toast.LENGTH_LONG).show()
+    return false
 }
 
 fun openUrl(context: Context, url: String) {

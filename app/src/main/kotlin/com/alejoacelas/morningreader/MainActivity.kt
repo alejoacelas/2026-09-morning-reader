@@ -64,8 +64,10 @@ class Nav(private val stack: MutableList<Screen>, val say: (String) -> Unit, pri
         if (!Store.canStart("video-" + video.youtubeId, minutes)) {
             say(overBudget(minutes)); return
         }
-        Store.update { it.copy(usedSecondsToday = it.usedSecondsToday + video.seconds, watched = it.watched + video.youtubeId) }
-        openVideo(context, video.youtubeId)
+        // Charge the budget only once the video actually opened.
+        if (openVideo(context, video.youtubeId)) {
+            Store.update { it.copy(usedSecondsToday = it.usedSecondsToday + video.seconds, watched = it.watched + video.youtubeId) }
+        }
     }
 
     private fun overBudget(minutes: Int): String {
