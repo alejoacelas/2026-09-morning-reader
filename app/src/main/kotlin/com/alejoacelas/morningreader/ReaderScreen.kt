@@ -41,6 +41,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -57,6 +58,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.delay
@@ -88,6 +90,19 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
     LaunchedEffect(scroll.value) { lastInteraction = System.currentTimeMillis() }
+    // Leaving the app mid-block (say, to pick music in Spotify) keeps counting, up to a cap.
+    DisposableEffect(itemId, lifecycle) {
+        Store.returnedToBlock(itemId)
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_STOP -> if (!finished) Store.leftBlock(itemId)
+                Lifecycle.Event.ON_START -> Store.returnedToBlock(itemId)
+                else -> {}
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
     // Count active reading time: one tick per second while visible and not idle.
     LaunchedEffect(itemId) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {

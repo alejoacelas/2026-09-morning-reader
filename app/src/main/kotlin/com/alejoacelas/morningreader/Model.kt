@@ -69,9 +69,19 @@ data class Highlight(
     val at: Long,
 )
 
-/** The block currently being read. It can always be finished, even past the budget. */
+/**
+ * The block currently being read. It can always be finished, even past the budget.
+ * `activeSeconds` is time in the reader (used to learn reading speed); `awaySeconds` is time
+ * spent in other apps mid-block, which counts toward the budget but not the speed.
+ */
 @Serializable
-data class InProgress(val itemId: String, val activeSeconds: Long = 0, val scroll: Int = 0)
+data class InProgress(
+    val itemId: String,
+    val activeSeconds: Long = 0,
+    val scroll: Int = 0,
+    val awaySince: Long? = null,
+    val awaySeconds: Long = 0,
+)
 
 @Serializable
 data class AppState(

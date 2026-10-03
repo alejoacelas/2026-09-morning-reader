@@ -65,7 +65,7 @@ object Session {
 
     fun minutesLeft(item: ReadItem, progress: InProgress): Int {
         val total = Store.minutesFor(item.words)
-        return maxOf(1, total - (progress.activeSeconds / 60).toInt())
+        return maxOf(1, total - ((progress.activeSeconds + progress.awaySeconds) / 60).toInt())
     }
 
     private fun <T> List<T>.shuffledBy(seed: Int): List<T> = shuffled(java.util.Random(seed.toLong()))

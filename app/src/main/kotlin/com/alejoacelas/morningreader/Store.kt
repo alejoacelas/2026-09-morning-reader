@@ -154,6 +154,24 @@ object Store {
         return s.inProgress?.itemId == itemId || usedMinutes() + minutes <= s.budgetMinutes + 0.001
     }
 
+    /** Time away from a block counts as reading time when you come back to it, up to this cap. */
+    const val AWAY_CAP_SECONDS = 5 * 60L
+
+    fun leftBlock(itemId: String) = update { s ->
+        val p = s.inProgress?.takeIf { it.itemId == itemId && it.awaySince == null } ?: return@update s
+        s.copy(inProgress = p.copy(awaySince = System.currentTimeMillis()))
+    }
+
+    fun returnedToBlock(itemId: String) = update { s ->
+        val p = s.inProgress?.takeIf { it.itemId == itemId } ?: return@update s
+        val since = p.awaySince ?: return@update s
+        val credit = ((System.currentTimeMillis() - since) / 1000).coerceIn(0, AWAY_CAP_SECONDS)
+        s.copy(
+            usedSecondsToday = s.usedSecondsToday + credit,
+            inProgress = p.copy(awaySince = null, awaySeconds = p.awaySeconds + credit),
+        )
+    }
+
     fun book(id: String?): BookPack? = _books.value.firstOrNull { it.id == id }
 
     fun item(id: String): ReadItem? {
