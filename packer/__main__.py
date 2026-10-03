@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PACKS = ROOT / "packs"
 PACKAGE = "com.alejoacelas.morningreader"
 PHONE_DIR = f"/sdcard/Android/data/{PACKAGE}/files"
-ADB_PHONE = Path.home() / "best/fun/adb-phone"
+ADB_PHONE = Path.home() / "best/dotfiles/bin/adb-phone"
 
 # The first shelf, hand-picked from the user's to-read list. How to suggest further
 # books is an open question (see DECISIONS.md).
