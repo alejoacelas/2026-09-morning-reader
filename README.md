@@ -45,18 +45,7 @@ Settings also adds and removes single feeds.
 
 ## Secrets
 
-`.env` holds these variables. Both items are in the personal 1Password account
-(`my.1password.com`), vault `Personal`, field `credential`.
-
-| Variable | 1Password item |
-| --- | --- |
-| `OPENROUTER_API_KEY` | `OPENROUTER_API_KEY — 2026-09-morning-reader` |
-| `YOUTUBE_API_KEY` | `YOUTUBE_API_KEY — 2026-09-morning-reader` (Google Cloud project `morning-reader-27191`, `alejoacelas@gmail.com`) |
-
-```bash
-for v in OPENROUTER_API_KEY YOUTUBE_API_KEY; do
-  echo "$v=$(op item get "$v — 2026-09-morning-reader" --account my.1password.com --vault Personal --fields credential --reveal)"
-done > .env
-```
+The app and `./pack` read API keys from an ignored `.env`. `AGENTS.md` says where
+each key lives in 1Password and how to rebuild the file.
 
 The Literata font is under the SIL Open Font License (`licenses/literata-OFL.txt`).

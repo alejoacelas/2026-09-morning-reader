@@ -39,12 +39,21 @@ The README covers adding books and feeds.
 
 ## Secrets
 
-Load keys into the ignored `.env` as the README shows, from the personal
-1Password account (`my.1password.com`), vault `Personal`, field `credential`:
+`.env` (ignored) holds the keys. Both are in the personal 1Password account
+(`my.1password.com`), vault `Personal`, field `credential`.
 
-- `OPENROUTER_API_KEY` — item `OPENROUTER_API_KEY — 2026-09-morning-reader`
-- `YOUTUBE_API_KEY` — item `YOUTUBE_API_KEY — 2026-09-morning-reader`
-  (Google Cloud project `morning-reader-27191`, account `alejoacelas@gmail.com`)
+| Variable | 1Password item |
+| --- | --- |
+| `OPENROUTER_API_KEY` | `OPENROUTER_API_KEY — 2026-09-morning-reader` |
+| `YOUTUBE_API_KEY` | `YOUTUBE_API_KEY — 2026-09-morning-reader` (Google Cloud project `morning-reader-27191`, `alejoacelas@gmail.com`) |
+
+Rebuild `.env` with:
+
+```bash
+for v in OPENROUTER_API_KEY YOUTUBE_API_KEY; do
+  echo "$v=$(op item get "$v — 2026-09-morning-reader" --account my.1password.com --vault Personal --fields credential --reveal)"
+done > .env
+```
 
 The OpenRouter key is compiled into the APK, so never publish a built APK. The
 model is `google/gemini-3.8-flash`.
