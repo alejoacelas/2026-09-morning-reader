@@ -25,6 +25,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,13 +47,20 @@ fun TodayScreen(modifier: Modifier) {
     val books by Store.books.collectAsState()
     val posts by Store.posts.collectAsState()
     val loaded by Store.loaded.collectAsState()
-    val cards = remember(state.day, state.finished, state.watched, state.inProgress?.itemId, books, posts, state.wordsPerMinute) {
+    val cards = remember(state.day, state.finished, state.watched, state.inProgress?.itemId, books, posts, state.wordsPerMinute,
+        state.usedSecondsToday / 60, state.budgetMinutes) {
         Session.cards(state, books, posts)
     }
-    val scope = rememberCoroutineScope()
     val refreshing by Blogs.running.collectAsState()
     val used = (state.usedSecondsToday / 60).toInt()
     val left = Store.minutesLeft()
+    // Record each time there are 5-10 minutes left and nothing on offer fits them.
+    LaunchedEffect(cards, left) {
+        if (loaded && left in 5..10 && cards.none { it.minutes <= left && it.key != state.inProgress?.itemId }) {
+            Store.recordShortfall(left)
+        }
+    }
+    val scope = rememberCoroutineScope()
 
     LazyColumn(modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp, 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {

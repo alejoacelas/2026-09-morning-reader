@@ -172,6 +172,11 @@ object Store {
         )
     }
 
+    fun recordShortfall(minutesLeft: Int) = update { s ->
+        if (s.shortfalls.any { it.day == s.day && it.minutesLeft == minutesLeft }) s
+        else s.copy(shortfalls = (s.shortfalls + Shortfall(s.day, minutesLeft, System.currentTimeMillis())).takeLast(500))
+    }
+
     fun book(id: String?): BookPack? = _books.value.firstOrNull { it.id == id }
 
     fun item(id: String): ReadItem? {

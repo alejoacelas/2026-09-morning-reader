@@ -60,7 +60,33 @@ object Session {
             if (postIt.hasNext()) mixed += postIt.next()
         }
         videos.forEachIndexed { i, v -> mixed.add(minOf(mixed.size, 2 + i * 4), v) }
-        cards + mixed
+        cards + fillers(state, books, posts, (cards + mixed).map { it.key }.toSet(), mixed) + mixed
+    }
+
+    /**
+     * When little time is left and the usual mix has nothing that fits, offer up to three
+     * self-contained pieces that do: short entry points, whole poems or stories, posts, videos.
+     */
+    private fun fillers(state: AppState, books: List<BookPack>, posts: List<BlogPost>, taken: Set<String>,
+                        mixed: List<Card>): List<Card> = with(Store) {
+        val left = minutesLeft()
+        if (left !in 1..15 || mixed.any { it.minutes <= left }) return emptyList()
+        val candidates = mutableListOf<Card>()
+        books.forEach { book ->
+            book.blocks.filter { (it.entryPoint || it.standalone) && it.id !in state.finished }
+                .forEach { b -> candidates += Card.Reading(b.toItem(book), "Fits in $left min", minutesFor(b.words)) }
+        }
+        posts.filter { it.id !in state.finished }
+            .forEach { candidates += Card.Reading(it.toItem(), "Fits in $left min", minutesFor(it.words)) }
+        books.forEach { b ->
+            b.videos.filter { it.youtubeId !in state.watched }
+                .forEach { v -> candidates += Card.Watch(v, b, maxOf(1, ceil(v.seconds / 60.0).toInt())) }
+        }
+        // Prefer the longest pieces that still fit, one per book or feed.
+        candidates.filter { it.minutes <= left && it.key !in taken }
+            .sortedByDescending { it.minutes }
+            .distinctBy { if (it is Card.Reading) it.item.source else it.key }
+            .take(3)
     }
 
     fun minutesLeft(item: ReadItem, progress: InProgress): Int {

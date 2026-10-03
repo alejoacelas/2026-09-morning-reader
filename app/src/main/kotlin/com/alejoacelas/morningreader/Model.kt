@@ -33,7 +33,18 @@ data class Block(
     val paragraphs: List<String>,
     @SerialName("playlist_prompt") val playlistPrompt: String = "",
     val videos: List<Video> = emptyList(),
+    /** Readable cold on its own: a whole story, poem, essay or self-contained episode. */
+    val standalone: Boolean = false,
+    val characters: List<Character> = emptyList(),
 )
+
+/** A main character in a block, described as of that point in the book (no spoilers). */
+@Serializable
+data class Character(val name: String, val note: String)
+
+/** A time the session had minutes left but nothing short enough to fill them. */
+@Serializable
+data class Shortfall(val day: String, val minutesLeft: Int, val at: Long)
 
 @Serializable
 data class Video(
@@ -98,4 +109,5 @@ data class AppState(
     val seenPostUrls: List<String> = emptyList(),
     val lastBlogRefresh: Long = 0,
     val blogStatus: String = "",
+    val shortfalls: List<Shortfall> = emptyList(),
 )
