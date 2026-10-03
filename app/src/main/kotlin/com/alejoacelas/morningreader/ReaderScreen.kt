@@ -205,6 +205,21 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
                         }
                     }
                 }
+                if (item.characters.isNotEmpty()) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(if (item.language == "Spanish") "QUIÉN ES QUIÉN" else "WHO'S WHO",
+                        style = MaterialTheme.typography.labelSmall, color = colors.primary)
+                    item.characters.forEach { c ->
+                        Text(
+                            androidx.compose.ui.text.buildAnnotatedString {
+                                withStyle(androidx.compose.ui.text.SpanStyle(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)) { append(c.name) }
+                                append(" — " + c.note)
+                            },
+                            style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 3.dp),
+                        )
+                    }
+                }
                 Spacer(Modifier.height(18.dp))
                 BlockText(item, colors.onBackground.toArgb(), colors.primary.toArgb()) { action, sel ->
                     lastInteraction = System.currentTimeMillis()

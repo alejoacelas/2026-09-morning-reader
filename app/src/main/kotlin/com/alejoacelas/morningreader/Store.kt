@@ -34,6 +34,7 @@ data class ReadItem(
     val order: Int? = null,
     val url: String? = null,
     val language: String? = null,
+    val characters: List<Character> = emptyList(),
 )
 
 object Store {
@@ -219,6 +220,7 @@ object Store {
             book.playlistPrompts.map { (k, v) -> "The book · $k" to v },
         videos = (videos + book.videos).distinctBy { it.youtubeId },
         bookId = book.id, order = order, url = book.sourceUrl, language = book.language,
+        characters = characters,
     )
 
     fun BlogPost.toItem() = ReadItem(

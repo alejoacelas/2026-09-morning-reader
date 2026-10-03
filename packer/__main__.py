@@ -5,6 +5,7 @@
   ./pack search "wealth of nations"   list matches without building
   ./pack starter                      build and push the starter shelf
   ./pack push                         push every built pack to the phone
+  ./pack annotate [ID ...]            add character notes and standalone flags to built packs
   ./pack videos [ID ...]              find videos for packs that have none (YouTube quota)
   ./pack opml FILE                    push a feed list (OPML) for the app to import
   ./pack pull                         copy notes, highlights and shortfalls from the phone
@@ -17,7 +18,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import segment, sources, videos
+from . import annotate, segment, sources, videos
 from .llm import Usage
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -76,6 +77,7 @@ def build(query: str) -> Path:
         "summary": seg.get("summary") or "", "playlist_prompts": seg.get("playlist_prompts") or {},
         "video_queries": seg.get("video_queries") or [], "videos": [], "blocks": blocks,
     }
+    annotate.annotate(pack)
     add_videos(pack)
     PACKS.mkdir(exist_ok=True)
     path = PACKS / f"{book_id}.json"
@@ -128,6 +130,8 @@ def main() -> None:
     starter = sub.add_parser("starter", help="build and push the starter shelf")
     starter.add_argument("--no-push", action="store_true")
     sub.add_parser("push", help="push all built packs")
+    ann = sub.add_parser("annotate", help="add character notes and standalone flags to built packs")
+    ann.add_argument("ids", nargs="*", help="Gutenberg ids (default: every built pack)")
     sub.add_parser("tidy", help="re-apply text cleanup to built packs without rebuilding them")
     vids = sub.add_parser("videos", help="find videos for built packs that have none")
     vids.add_argument("ids", nargs="*", help="Gutenberg ids (default: every pack without videos)")
@@ -158,6 +162,22 @@ def main() -> None:
                 print(pack["title"])
                 add_videos(pack)
                 path.write_text(json.dumps(pack, ensure_ascii=False, indent=1))
+    elif args.command == "annotate":
+        from concurrent.futures import ThreadPoolExecutor
+        paths = [PACKS / f"gutenberg-{i}.json" for i in args.ids] or sorted(PACKS.glob("*.json"))
+
+        def run(path: Path) -> str:
+            pack = json.loads(path.read_text())
+            Usage.local.cost = 0.0
+            annotate.annotate(pack, log=lambda msg: None)
+            path.write_text(json.dumps(pack, ensure_ascii=False, indent=1))
+            return f"  {pack['title']}: {sum(len(b['characters']) for b in pack['blocks'])} character notes, " \
+                   f"{sum(b['standalone'] for b in pack['blocks'])} standalone blocks (${Usage.local.cost:.3f})"
+
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            for line in pool.map(run, paths):
+                print(line)
+        print(f"Total Gemini cost: ${Usage.cost:.3f}")
     elif args.command == "tidy":
         for path in sorted(PACKS.glob("*.json")):
             pack = json.loads(path.read_text())

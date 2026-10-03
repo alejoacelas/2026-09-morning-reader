@@ -3,6 +3,7 @@
 import json
 import os
 import re
+import threading
 import time
 from pathlib import Path
 
@@ -23,9 +24,11 @@ def _env(name: str) -> str:
 
 
 class Usage:
+    """Running totals; `local.cost` is per thread so parallel runs can report their own spend."""
     cost = 0.0
     prompt_tokens = 0
     completion_tokens = 0
+    local = threading.local()
 
 
 def ask_json(prompt: str, max_tokens: int = 60000, effort: str = "low") -> dict:
@@ -48,6 +51,7 @@ def ask_json(prompt: str, max_tokens: int = 60000, effort: str = "low") -> dict:
             data = resp.json()
             usage = data.get("usage") or {}
             Usage.cost += usage.get("cost") or 0
+            Usage.local.cost = getattr(Usage.local, "cost", 0.0) + (usage.get("cost") or 0)
             Usage.prompt_tokens += usage.get("prompt_tokens") or 0
             Usage.completion_tokens += usage.get("completion_tokens") or 0
             content = data["choices"][0]["message"]["content"] or ""

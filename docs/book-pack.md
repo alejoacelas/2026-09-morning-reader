@@ -30,6 +30,8 @@ it finds there on launch.
       "words": 1850,
       "paragraphs": ["Plain text of each paragraph, in order."],
       "playlist_prompt": "A Spotify AI Playlist prompt matched to this passage's mood, theme and place.",
+      "standalone": false,
+      "characters": [{"name": "Dorcas", "note": "Longtime parlourmaid at Styles Court."}],
       "videos": [
         {"youtube_id": "abc123", "title": "…", "channel": "…", "seconds": 540, "why": "One line."}
       ]
@@ -43,5 +45,8 @@ it finds there on launch.
 - Paragraph text is plain Unicode. Emphasis and footnotes are dropped. Headings
   start with `## `; verse keeps its line breaks as `\n`.
 - Hooks, recaps, summaries and playlist prompts are in the book's `language`.
+- `characters` names up to four people a reader starting at this block couldn't place,
+  described only with what the book has revealed by the end of the block.
+  `standalone` marks blocks that read well cold (a whole story, poem or episode).
 - Book-level `videos` lists every pick; a block's `videos` holds the ones matched to it.
 - Videos are 600 seconds or less.
