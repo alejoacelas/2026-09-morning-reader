@@ -14,8 +14,13 @@ they are served as short, self-contained passages under a daily time budget.
   today plus its estimate fits the daily budget (45 minutes by default). The block
   in progress can always be finished.
 - Estimates use the reader's measured words per minute.
-- Selecting text and tapping **Explain** defines 1–2 words or explains a longer
-  passage, in the language of the text.
+- Selecting text offers **Explain** (defines 1–2 words, explains longer passages),
+  **Ask** (a typed question) and **Note**. Explain and Ask send the selection's
+  paragraph and its neighbours as context and answer in the language of the text.
+  Notes go to `files/exports/notes.jsonl` on the phone and are never shown in the app.
+- Each block can list a few main characters, described only with what the book has
+  revealed by then.
+- Swiping a card right to left archives its whole book (or post) at the next reload.
 - Each block and book has Spotify AI Playlist prompts. The app copies one and opens
   Spotify, since Spotify has no API for AI Playlists.
 

@@ -14,6 +14,14 @@
   block ([why](#keep-stories-and-poems-whole)).
 - "Dip in" picks rotate among a book's three earliest unread entry points, so a
   cold start never lands on a novel's ending.
+- Leaving the app mid-block keeps counting toward the budget, up to 5 minutes per
+  absence, so stepping out to Spotify counts but a block left open overnight doesn't.
+  Time away doesn't feed the learned reading speed.
+- With 15 minutes or less left and nothing that fits, Today offers up to three
+  self-contained pieces that do. Times with 5–10 minutes left and nothing fitting are
+  logged for `./pack pull`.
+- Swiping a card archives the whole book or post, at the user's choice, not just
+  that block.
 
 ### Do the heavy work once, on the Mac
 
@@ -22,6 +30,10 @@
   depend on the Mac.
 - Hooks, recaps, summaries and highlight answers are written in the book's
   language.
+- Character notes and standalone flags are added by a separate pass
+  (`./pack annotate`) that keeps block ids, so existing packs gain them without
+  losing reading progress. Re-segmenting a book changes its block ids.
+- Notes are private and export-only: never displayed in the app.
 - Gemini 3.8 Flash via OpenRouter, with minimal reasoning for lookups, at the
   user's request.
 
@@ -52,3 +64,8 @@ about 26 and 31 minutes. The budget rule still applies to them.
 First shelf: Middlemarch, Mill's Autobiography, Quiroga's *Cuentos de amor de
 locura y de muerte*, Lorca's *Romancero gitano*, Frankenstein, Anna Karenina, The
 Trial and The Mysterious Affair at Styles, chosen from the user's to-read list.
+
+### 2026-10-03
+
+After the first week: notes, Ask, character notes, swipe-to-archive (whole book),
+5-minute cap on time away, and short "fits" picks near the end of the budget.

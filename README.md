@@ -29,12 +29,19 @@ loads new packs when it opens or when you tap refresh.
 ./pack add "tale of two cities"      # or build the top search match
 ./pack starter                       # build and push the first shelf
 ./pack videos                        # add videos to packs built when YouTube quota ran out
+./pack annotate                      # add character notes to packs built before they existed
 ./pack push                          # re-push every built pack
 ```
 
 A pack costs about $0.02–0.65 in Gemini calls, roughly $0.13 per 100,000 words,
 and takes about a minute. Finding videos uses 500 of YouTube's 10,000 free daily
 quota units, so about 20 books a day can get videos.
+
+## Notes and highlights
+
+Select text while reading to Explain it, Ask a question about it, or add a Note.
+Notes are saved for later and aren't shown in the app. `./pack pull` copies notes,
+highlights and the log of times nothing fit the minutes left into `cache/phone/`.
 
 ## Blog feeds
 
