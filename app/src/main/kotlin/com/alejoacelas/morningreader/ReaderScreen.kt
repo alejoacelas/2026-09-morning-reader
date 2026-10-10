@@ -392,7 +392,17 @@ private fun BlockText(item: ReadItem, textColor: Int, accent: Int, onAction: (Se
                         }
                         return true
                     }
-                    override fun onPrepareActionMode(mode: ActionMode, menu: Menu) = false
+                    // Android adds Share, Select all, Define, Translate and smart-selection items around our own;
+                    // keep only Copy and ours. Runs on every prepare because Select all gets re-added each time.
+                    override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
+                        val keep = SelectionAction.entries.map { it.menuId }.toSet() + android.R.id.copy
+                        var i = 0
+                        while (i < menu.size()) {
+                            val id = menu.getItem(i).itemId
+                            if (id in keep) i++ else menu.removeItem(id)
+                        }
+                        return true
+                    }
                     override fun onActionItemClicked(mode: ActionMode, menuItem: MenuItem): Boolean {
                         val action = SelectionAction.entries.firstOrNull { it.menuId == menuItem.itemId } ?: return false
                         currentBuilt.selection(selectionStart, selectionEnd)?.let { currentAction(action, it) }
