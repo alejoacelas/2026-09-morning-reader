@@ -17,8 +17,12 @@ it finds there on launch.
   "source_url": "https://www.gutenberg.org/ebooks/2680",
   "summary": "Two sentences on what the book is and why it's worth dipping into.",
   "playlist_prompts": {"thematic": "…", "geographic": "…", "mood": "…"},
-  "video_queries": ["searches used to find the videos"],
-  "videos": [{"youtube_id": "abc123", "title": "…", "channel": "…", "seconds": 540, "why": "One line."}],
+  "secondary": [
+    {"kind": "audio", "title": "Meditations", "creator": "In Our Time", "url": "https://www.bbc.co.uk/programmes/…",
+     "audio_url": "http://…mp3", "minutes": 50, "why": "One line."},
+    {"kind": "video", "title": "…", "creator": "Gresham College", "url": "https://www.youtube.com/watch?v=abc123",
+     "youtube_id": "abc123", "minutes": 8, "why": "One line."}
+  ],
   "blocks": [
     {
       "id": "gutenberg-2680-b07",
@@ -31,10 +35,7 @@ it finds there on launch.
       "paragraphs": ["Plain text of each paragraph, in order."],
       "playlist_prompt": "A Spotify AI Playlist prompt matched to this passage's mood, theme and place.",
       "standalone": false,
-      "characters": [{"name": "Dorcas", "note": "Longtime parlourmaid at Styles Court."}],
-      "videos": [
-        {"youtube_id": "abc123", "title": "…", "channel": "…", "seconds": 540, "why": "One line."}
-      ]
+      "characters": [{"name": "Dorcas", "note": "Longtime parlourmaid at Styles Court."}]
     }
   ]
 }
@@ -48,5 +49,9 @@ it finds there on launch.
 - `characters` names up to four people a reader starting at this block couldn't place,
   described only with what the book has revealed by the end of the block.
   `standalone` marks blocks that read well cold (a whole story, poem or episode).
-- Book-level `videos` lists every pick; a block's `videos` holds the ones matched to it.
-- Videos are 600 seconds or less.
+- `secondary` lists up to four pieces of material from the trusted sources in
+  `packer/trusted-sources.toml`, best first. `kind` is `video`, `audio` (with
+  `audio_url`), `essay` or `book`; `minutes` is missing for books. Videos of 10 minutes
+  or less double as video blocks on Today.
+- Packs built before trusted sources have `videos` (book level and per block) from a
+  broad YouTube search instead. The app still shows them; `./pack sources` replaces them.

@@ -1,0 +1,63 @@
+# Trusted sources for secondary material: biography and context on a book's author
+# and period, offered at the end of a block. `./pack sources` searches only these,
+# and Gemini keeps what really concerns the book or its author.
+#
+# To add a YouTube channel, give its name and channel id (the "UC..." part of
+# youtube.com/channel/UC...). `languages` limits it to books in those languages; leave
+# it out to search the channel for every book. Each channel costs 100 of YouTube's
+# 10,000 daily quota units per book.
+
+[[youtube]]
+name = "National Theatre"
+channel_id = "UCUDq1XzCY0NIOYVJvEMQjqw"
+
+[[youtube]]
+name = "Gresham College"
+channel_id = "UC1t6kKXoBvjdr8m9KJ2Fx7A"
+
+[[youtube]]
+name = "BBC"
+channel_id = "UCCj956IF62FbT7Gouszaj9w"
+
+[[youtube]]
+name = "BBC Ideas"
+channel_id = "UCDYT9mM3L_ByrPYMyl0MGGg"
+
+[[youtube]]
+name = "BBC Radio 4"
+channel_id = "UCnkRLeAmZWkP-j738NZvhRw"
+
+[[youtube]]
+name = "British Library"
+channel_id = "UC-75_Zh-CLF7hN8dM4EGEGA"
+
+[[youtube]]
+name = "Fundación Juan March"
+channel_id = "UC6tnZjVb8hAsReWCoB4DaqA"
+languages = ["Spanish"]
+
+[[youtube]]
+name = "Biblioteca Nacional de España"
+channel_id = "UC49nxT5gHSKm2_ha3NfTJtQ"
+languages = ["Spanish"]
+
+# Podcast feeds (RSS). Episodes are matched on the author's name or the book's title
+# and open as audio. The feeds are cached in cache/ for a week.
+
+[[podcast]]
+name = "In Our Time"
+feed = "https://podcasts.files.bbci.co.uk/b006qykl.rss"
+
+[[podcast]]
+name = "Great Lives"
+feed = "https://podcasts.files.bbci.co.uk/b006qxsb.rss"
+
+# Essays from The Public Domain Review, matched the same way and opened in a browser.
+[public_domain_review]
+enabled = true
+
+# Biographies, letters and critical studies of the author on Project Gutenberg, found
+# through the catalog's subject headings. They open on gutenberg.org and can be packed
+# with `./pack add <id>`.
+[gutenberg_biographies]
+enabled = true

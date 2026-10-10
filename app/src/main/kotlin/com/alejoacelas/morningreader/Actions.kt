@@ -44,6 +44,25 @@ fun openVideo(context: Context, youtubeId: String): Boolean {
     return false
 }
 
+/** Videos open in YouTube, radio episodes in an audio player (or the browser), everything else in the browser. */
+fun openSecondary(context: Context, item: Secondary): Boolean {
+    if (item.youtubeId != null) return openVideo(context, item.youtubeId)
+    if (item.audioUrl != null) {
+        try {
+            context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(item.audioUrl.toUri(), "audio/*")
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return true
+        } catch (e: ActivityNotFoundException) {
+            Log.w("Actions", "no audio player for ${item.audioUrl}", e)
+        }
+    }
+    return try {
+        openUrl(context, item.url); true
+    } catch (e: ActivityNotFoundException) {
+        Toast.makeText(context, "No app on this phone can open ${item.url}", Toast.LENGTH_LONG).show(); false
+    }
+}
+
 fun openUrl(context: Context, url: String) {
     context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }

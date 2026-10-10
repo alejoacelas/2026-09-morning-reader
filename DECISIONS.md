@@ -41,6 +41,16 @@
 - Gemini 3.8 Flash via OpenRouter, with minimal reasoning for lookups, at the
   user's request.
 
+### Take secondary material only from trusted sources
+
+- Videos, radio, essays and biographies come only from the hand-picked list in
+  `packer/trusted-sources.toml`, never a broad search, because a broad search can't
+  guarantee quality. Gemini only filters that list; it doesn't widen it.
+- The list leans toward biography and context on the author and period, which the user
+  finds most interesting.
+- Videos of 10 minutes or less are blocks and count toward the budget. Longer videos,
+  radio episodes, essays and books open outside the session and don't count.
+
 ### Keep private lists out of the public repository
 
 - The repository is public. Feed lists, reading lists and downloads live in the
@@ -79,3 +89,7 @@ After the first week: notes, Ask, character notes, swipe-to-archive (whole book)
 Added keep going / maybe later / done with this after each block, so the session
 can scale to more books without the reader re-sorting them. The selection menu keeps
 only Explain, Ask, Note and Copy.
+
+Replaced the broad YouTube search with trusted sources. On the first shelf every book
+got at least one item (8 of 8): In Our Time covered six, Gutenberg biographies two,
+and the Spanish books came through Fundación Juan March and In Our Time's Lorca.

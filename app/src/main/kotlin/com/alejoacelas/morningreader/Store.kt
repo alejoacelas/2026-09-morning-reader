@@ -84,6 +84,7 @@ object Store {
             .mapNotNull { f ->
                 runCatching { json.decodeFromString<BookPack>(f.readText()) }
                     .onFailure { Log.e(TAG, "bad pack ${f.name}", it) }.getOrNull()
+                    ?.let { p -> if (p.secondary.isEmpty()) p else p.copy(videos = p.secondary.mapNotNull { it.asBlockVideo }) }
             }
         _posts.value = postsDir.listFiles().orEmpty().mapNotNull {
             runCatching { json.decodeFromString<BlogPost>(it.readText()) }.getOrNull()

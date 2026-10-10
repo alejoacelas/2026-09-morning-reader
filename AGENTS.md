@@ -25,6 +25,11 @@ they are served as short, self-contained passages under a daily time budget.
   **maybe later** (Today lists it last) or **done with this** (archived at once). The
   choice is optional; a book with none keeps its place in the daily shuffle. The
   book page shows and changes the same choice.
+- The end of a block offers the best one or two pieces of **secondary material** not
+  yet opened: videos, radio episodes, essays and biographies about the book or its
+  author, found only in the trusted sources listed in `packer/trusted-sources.toml`
+  and screened by Gemini. Videos of 10 minutes or less are also blocks on Today; longer
+  material opens outside the session and doesn't count toward the budget.
 - Each block and book has Spotify AI Playlist prompts. The app copies one and opens
   Spotify, since Spotify has no API for AI Playlists.
 
@@ -33,7 +38,8 @@ they are served as short, self-contained passages under a daily time budget.
 - `app/` — the Android app (Kotlin, Jetpack Compose). It fetches blog feeds and
   calls the model itself, so mornings don't need the Mac.
 - `packer/` and `./pack` — Mac-side book preparation: Gutenberg search, Standard
-  Ebooks edition when one exists, Gemini segmentation, YouTube picks, push to phone.
+  Ebooks edition when one exists, Gemini segmentation, secondary material from
+  trusted sources, push to phone.
 - `docs/book-pack.md` — the book pack format both sides share.
 - `cache/` and `packs/` are ignored. `cache/` holds downloads and the user's
   private feed and reading lists; never commit it.

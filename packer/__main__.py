@@ -6,7 +6,7 @@
   ./pack starter                      build and push the starter shelf
   ./pack push                         push every built pack to the phone
   ./pack annotate [ID ...]            add character notes and standalone flags to built packs
-  ./pack videos [ID ...]              find videos for packs that have none (YouTube quota)
+  ./pack sources [ID ...]             find secondary material from trusted sources for built packs
   ./pack opml FILE                    push a feed list (OPML) for the app to import
   ./pack pull                         copy notes, highlights and shortfalls from the phone
 """
@@ -18,7 +18,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import annotate, segment, sources, videos
+from . import annotate, secondary, segment, sources
 from .llm import Usage
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -75,10 +75,10 @@ def build(query: str) -> Path:
         "edition": "Standard Ebooks" if edition == "se" else "Project Gutenberg",
         "source_url": f"https://www.gutenberg.org/ebooks/{book.gutenberg_id}",
         "summary": seg.get("summary") or "", "playlist_prompts": seg.get("playlist_prompts") or {},
-        "video_queries": seg.get("video_queries") or [], "videos": [], "blocks": blocks,
+        "secondary": [], "blocks": blocks,
     }
     annotate.annotate(pack)
-    add_videos(pack)
+    add_secondary(pack)
     PACKS.mkdir(exist_ok=True)
     path = PACKS / f"{book_id}.json"
     path.write_text(json.dumps(pack, ensure_ascii=False, indent=1))
@@ -86,22 +86,17 @@ def build(query: str) -> Path:
     return path
 
 
-def add_videos(pack: dict) -> None:
-    """Attach up to four screened YouTube videos to a pack, if the daily quota allows."""
+def add_secondary(pack: dict) -> None:
+    """Attach up to four screened pieces of secondary material from the trusted sources."""
+    picks = secondary.find(pack)
+    pack["secondary"] = picks
+    # Older packs carried videos from a broad YouTube search; trusted sources replace them.
+    pack.pop("video_queries", None)
+    pack["videos"] = []
     for block in pack["blocks"]:
         block["videos"] = []
-    try:
-        picks = videos.find(pack["title"], pack["author"], pack["summary"], pack.get("video_queries") or [],
-                            pack["blocks"], lang=LANGUAGE_CODES.get(pack.get("language"), "en"))
-    except videos.QuotaError as err:
-        print(f"  no videos: {err}. Run ./pack videos {pack['id'].split('-')[-1]} tomorrow.")
-        return
     for pick in picks:
-        index = pick.pop("block")
-        if isinstance(index, int) and 0 <= index < len(pack["blocks"]):
-            pack["blocks"][index]["videos"].append(pick)
-    pack["videos"] = picks
-    print(f"  {len(picks)} videos")
+        print(f"    {pick['kind']}: {pick['creator']} · {pick['title']}")
 
 
 def push(paths: list[Path], subdir: str = "packs") -> None:
@@ -133,8 +128,8 @@ def main() -> None:
     ann = sub.add_parser("annotate", help="add character notes and standalone flags to built packs")
     ann.add_argument("ids", nargs="*", help="Gutenberg ids (default: every built pack)")
     sub.add_parser("tidy", help="re-apply text cleanup to built packs without rebuilding them")
-    vids = sub.add_parser("videos", help="find videos for built packs that have none")
-    vids.add_argument("ids", nargs="*", help="Gutenberg ids (default: every pack without videos)")
+    sec = sub.add_parser("sources", help="find secondary material from trusted sources for built packs")
+    sec.add_argument("ids", nargs="*", help="Gutenberg ids (default: every pack without secondary material)")
     sub.add_parser("opml", help="push an OPML feed list").add_argument("file", type=Path)
     sub.add_parser("pull", help="copy notes, highlights and shortfalls from the phone into cache/phone/")
     args = parser.parse_args()
@@ -154,14 +149,18 @@ def main() -> None:
         print(f"Total Gemini cost this run: ${Usage.cost:.3f}")
         if not args.no_push:
             push(paths)
-    elif args.command == "videos":
+    elif args.command == "sources":
         paths = [PACKS / f"gutenberg-{i}.json" for i in args.ids] or sorted(PACKS.glob("*.json"))
+        covered = 0
         for path in paths:
             pack = json.loads(path.read_text())
-            if args.ids or not pack.get("videos"):
+            if args.ids or "secondary" not in pack:
                 print(pack["title"])
-                add_videos(pack)
+                add_secondary(pack)
                 path.write_text(json.dumps(pack, ensure_ascii=False, indent=1))
+            covered += bool(pack.get("secondary"))
+        print(f"{covered} of {len(paths)} books have secondary material. "
+              f"Gemini ${Usage.cost:.3f}, YouTube {secondary.Usage.youtube_units} quota units.")
     elif args.command == "annotate":
         from concurrent.futures import ThreadPoolExecutor
         paths = [PACKS / f"gutenberg-{i}.json" for i in args.ids] or sorted(PACKS.glob("*.json"))

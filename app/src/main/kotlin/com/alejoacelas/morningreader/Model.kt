@@ -18,8 +18,28 @@ data class BookPack(
     val summary: String = "",
     @SerialName("playlist_prompts") val playlistPrompts: Map<String, String> = emptyMap(),
     val videos: List<Video> = emptyList(),
+    /** Secondary material from trusted sources, best first. Replaces `videos` in packs that have it. */
+    val secondary: List<Secondary> = emptyList(),
     val blocks: List<Block> = emptyList(),
 )
+
+/** A video, radio episode, essay or book about a book or its author, from a trusted source. */
+@Serializable
+data class Secondary(
+    val kind: String,
+    val title: String,
+    val creator: String = "",
+    val url: String,
+    @SerialName("youtube_id") val youtubeId: String? = null,
+    @SerialName("audio_url") val audioUrl: String? = null,
+    val minutes: Int? = null,
+    val why: String = "",
+) {
+    /** Videos of 10 minutes or less are blocks: they show on Today and count toward the budget. */
+    val asBlockVideo: Video?
+        get() = if (kind == "video" && youtubeId != null && (minutes ?: 99) <= 10)
+            Video(youtubeId, title, creator, (minutes ?: 1) * 60, why) else null
+}
 
 @Serializable
 data class Block(
@@ -130,6 +150,8 @@ data class AppState(
     val archived: Set<String> = emptySet(),
     /** What to serve next from a book, chosen after a block: "keep" or "later". No entry means no choice. */
     val bookChoices: Map<String, String> = emptyMap(),
+    /** Secondary material already opened (by url), so the end of a block offers something new. */
+    val opened: Set<String> = emptySet(),
 )
 
 /** What happens next with a book, chosen at the end of a block. Today's session ranks books by it. */

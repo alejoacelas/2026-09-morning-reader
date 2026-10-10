@@ -64,7 +64,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -357,7 +359,15 @@ private fun AfterBlock(item: ReadItem, state: AppState) {
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         BookChoiceRow(book.id, state)
     }
-    val videos = item.videos.filter { it.youtubeId !in state.watched }.take(2)
+    val further = book?.secondary.orEmpty()
+        .filter { it.url !in state.opened && (it.youtubeId == null || it.youtubeId !in state.watched) }.take(2)
+    if (further.isNotEmpty()) {
+        Spacer(Modifier.height(18.dp))
+        Text("GO DEEPER", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        further.forEach { SecondaryLink(it) }
+    }
+    // Packs built before trusted sources still carry videos from a broad search.
+    val videos = if (book?.secondary.isNullOrEmpty()) item.videos.filter { it.youtubeId !in state.watched }.take(2) else emptyList()
     if (videos.isNotEmpty()) {
         Spacer(Modifier.height(18.dp))
         Text("SHORT VIDEOS", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
@@ -369,6 +379,24 @@ private fun AfterBlock(item: ReadItem, state: AppState) {
     }
     Spacer(Modifier.height(10.dp))
     OutlinedButton(onClick = { nav.top(Screen.Today) }, modifier = Modifier.fillMaxWidth()) { Text("Back to today") }
+}
+
+/** One piece of secondary material: what it is, where it's from, how long, and why it's worth it. */
+@Composable
+fun SecondaryLink(item: Secondary, dim: Boolean = false) {
+    val nav = LocalNav.current
+    val kind = when (item.kind) {
+        "video" -> "Video"; "audio" -> "Listen"; "essay" -> "Essay"; "book" -> "Book"; else -> item.kind
+    }
+    Column(Modifier.fillMaxWidth().clickable { nav.open(item) }.padding(vertical = 8.dp).alpha(if (dim) 0.5f else 1f)) {
+        run {
+            Text(listOfNotNull(kind, item.creator, item.minutes?.let { "$it min" }).joinToString(" · ").uppercase(),
+                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(item.title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
+            if (item.why.isNotBlank()) Text(item.why, style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
 }
 
 /**

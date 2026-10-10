@@ -104,7 +104,13 @@ fun BookScreen(bookId: String, modifier: Modifier) {
                 Text(book.summary, style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(10.dp))
                 BookChoiceRow(book.id, state)
-                if (book.videos.isNotEmpty()) {
+                if (book.secondary.isNotEmpty()) {
+                    Spacer(Modifier.height(14.dp))
+                    Text("GO DEEPER", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    book.secondary.forEach { s ->
+                        SecondaryLink(s, dim = s.url in state.opened || s.youtubeId in state.watched)
+                    }
+                } else if (book.videos.isNotEmpty()) {
                     Spacer(Modifier.height(14.dp))
                     Text("SHORT VIDEOS", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     book.videos.forEach { v ->

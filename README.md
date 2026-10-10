@@ -29,14 +29,26 @@ loads new packs when it opens or when you tap refresh.
 ./pack add 98                        # build and push by Gutenberg id
 ./pack add "tale of two cities"      # or build the top search match
 ./pack starter                       # build and push the first shelf
-./pack videos                        # add videos to packs built when YouTube quota ran out
+./pack sources                       # find secondary material for packs that have none
+./pack sources 84                    # or redo it for one book
 ./pack annotate                      # add character notes to packs built before they existed
 ./pack push                          # re-push every built pack
 ```
 
 A pack costs about $0.02–0.65 in Gemini calls, roughly $0.13 per 100,000 words,
-and takes about a minute. Finding videos uses 500 of YouTube's 10,000 free daily
-quota units, so about 20 books a day can get videos.
+and takes about a minute.
+
+## Secondary material
+
+At the end of a block the app offers one or two things to watch, listen to or read
+about the book or its author. They come only from the trusted sources in
+`packer/trusted-sources.toml`: YouTube channels such as the National Theatre and
+Gresham College, BBC *In Our Time* and *Great Lives*, The Public Domain Review, and
+biographies on Project Gutenberg. Edit that file to add or drop a source. Gemini keeps
+the candidates that really concern the book or author, which costs under a cent a book.
+Each YouTube channel searched costs 100 of the 10,000 free daily quota units, so with
+six channels about 16 books a day can be searched; when the quota runs out the other
+sources still work and `./pack sources <id>` adds videos the next day.
 
 ## Notes and highlights
 

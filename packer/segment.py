@@ -52,11 +52,9 @@ Also give, for the whole book:
   was written in.
 - "playlist_prompts": three Spotify AI Playlist prompts under 25 words each, keyed
   "thematic", "geographic" and "mood".
-- "video_queries": 4 YouTube search queries likely to find excellent short explainers,
-  lectures or documentary clips about the book, its author, or its subjects.
 """
 BOOK_SCHEMA = ('"summary": "", "year": 0, "origin": "", "playlist_prompts": {"thematic": "", '
-               '"geographic": "", "mood": ""}, "video_queries": [""], ')
+               '"geographic": "", "mood": ""}, ')
 
 
 def _words(text: str) -> int:
@@ -162,8 +160,7 @@ def segment(title: str, author: str, paragraphs: list[str], language: str = "Eng
         if isinstance(reply, list):  # later windows sometimes drop the {"blocks": ...} wrapper
             reply = {"blocks": reply}
         if first:
-            book = {k: reply.get(k) for k in ("summary", "year", "origin", "playlist_prompts",
-                                             "video_queries")}
+            book = {k: reply.get(k) for k in ("summary", "year", "origin", "playlist_prompts")}
         starts = sorted({b["start"] for b in reply.get("blocks", []) if lo <= int(b["start"]) < hi})
         by_start = {int(b["start"]): b for b in reply.get("blocks", [])}
         if not starts or starts[0] != lo:

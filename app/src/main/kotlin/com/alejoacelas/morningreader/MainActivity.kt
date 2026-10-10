@@ -70,6 +70,15 @@ class Nav(private val stack: MutableList<Screen>, val say: (String) -> Unit, pri
         }
     }
 
+    /**
+     * Opens secondary material. Short videos are blocks and go through [watch]; longer videos,
+     * radio, essays and books open outside the session and don't count toward the budget.
+     */
+    fun open(item: Secondary) {
+        item.asBlockVideo?.let { watch(it); return }
+        if (openSecondary(context, item)) Store.update { it.copy(opened = it.opened + item.url) }
+    }
+
     private fun overBudget(minutes: Int): String {
         val left = Store.minutesLeft()
         return "That's about $minutes min and you have $left left today. Pick something shorter, or come back tomorrow."
