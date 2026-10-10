@@ -78,5 +78,6 @@ done > .env
 ```
 
 The OpenRouter key and the GitHub token are compiled into the APK, so never publish
-a built APK. The
-model is `google/gemini-3.8-flash`.
+a built APK. The model is `google/gemini-3.8-flash`. API spending is approved:
+build packs and rerun model calls without asking about cost. OpenRouter tops up
+automatically.
