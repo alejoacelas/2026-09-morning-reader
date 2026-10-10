@@ -116,6 +116,13 @@ object Store {
         }
     }
 
+    /** Writes state at once, for changes that must survive the process dying right after. */
+    fun saveNow() = synchronized(this) {
+        val tmp = File(stateFile.path + ".tmp")
+        tmp.writeText(json.encodeToString(AppState.serializer(), _state.value))
+        tmp.renameTo(stateFile)
+    }
+
     fun savePost(post: BlogPost) {
         File(postsDir, post.id + ".json").writeText(json.encodeToString(BlogPost.serializer(), post))
         _posts.value = (_posts.value.filter { it.id != post.id } + post).sortedByDescending { it.published }

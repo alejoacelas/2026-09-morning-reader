@@ -51,6 +51,12 @@
 - Videos of 10 minutes or less are blocks and count toward the budget. Longer videos,
   radio episodes, essays and books open outside the session and don't count.
 
+### File feature requests straight from the phone
+
+- A request typed in Settings becomes a GitHub issue on this repository at once,
+  through a fine-grained token limited to this repository's issues and compiled into
+  the APK. A request stays on the phone until GitHub accepts it.
+
 ### Keep private lists out of the public repository
 
 - The repository is public. Feed lists, reading lists and downloads live in the
@@ -99,6 +105,8 @@ only Explain, Ask, Note and Copy.
 Replaced the broad YouTube search with trusted sources. On the first shelf every book
 got at least one item (8 of 8): In Our Time covered six, Gutenberg biographies two,
 and the Spanish books came through Fundación Juan March and In Our Time's Lorca.
+
+Added feature requests from Settings, filed as GitHub issues.
 
 Added the wish list from a Chrome bookmarks folder. Its name and contents stay in
 `cache/` because the repository is public.

@@ -81,6 +81,11 @@ load an OPML export (for example from Feedly), push it with
 `./pack opml path/to/feeds.opml`, or use Settings → Import OPML on the phone.
 Settings also adds and removes single feeds.
 
+## Feature requests
+
+Type a request at the top of Settings and tap Send. It becomes an issue on this
+repository. Requests made offline wait on the phone and go out once it's online.
+
 ## Secrets
 
 The app and `./pack` read API keys from an ignored `.env`. `AGENTS.md` says where

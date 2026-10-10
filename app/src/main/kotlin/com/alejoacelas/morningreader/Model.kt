@@ -152,7 +152,14 @@ data class AppState(
     val bookChoices: Map<String, String> = emptyMap(),
     /** Secondary material already opened (by url), so the end of a block offers something new. */
     val opened: Set<String> = emptySet(),
+    /** Feature requests not yet accepted by GitHub, oldest first. */
+    val pendingRequests: List<FeatureRequest> = emptyList(),
+    val lastFiledIssue: Int = 0,
 )
+
+/** A feature request typed in Settings, kept until it's filed as a GitHub issue. */
+@Serializable
+data class FeatureRequest(val text: String, val at: Long)
 
 /** What happens next with a book, chosen at the end of a block. Today's session ranks books by it. */
 enum class BookChoice(val key: String, val label: String, val effect: String) {

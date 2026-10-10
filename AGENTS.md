@@ -30,6 +30,9 @@ they are served as short, self-contained passages under a daily time budget.
   author, found only in the trusted sources listed in `packer/trusted-sources.toml`
   and screened by Gemini. Videos of 10 minutes or less are also blocks on Today; longer
   material opens outside the session and doesn't count toward the budget.
+- The top of Settings takes feature requests. Each is filed as a GitHub issue on this
+  repository when sent; if that fails it stays on the phone and a background job
+  retries once there's network.
 - Each block and book has Spotify AI Playlist prompts. The app copies one and opens
   Spotify, since Spotify has no API for AI Playlists.
 
@@ -57,21 +60,23 @@ The README covers adding books and feeds.
 
 ## Secrets
 
-`.env` (ignored) holds the keys. Both are in the personal 1Password account
+`.env` (ignored) holds the keys. All are in the personal 1Password account
 (`my.1password.com`), vault `Personal`, field `credential`.
 
 | Variable | 1Password item |
 | --- | --- |
 | `OPENROUTER_API_KEY` | `OPENROUTER_API_KEY — 2026-09-morning-reader` |
 | `YOUTUBE_API_KEY` | `YOUTUBE_API_KEY — 2026-09-morning-reader` (Google Cloud project `morning-reader-27191`, `alejoacelas@gmail.com`) |
+| `GITHUB_ISSUES_TOKEN` | `GITHUB_ISSUES_TOKEN — 2026-09-morning-reader` (fine-grained token for this repository only, Issues read and write) |
 
 Rebuild `.env` with:
 
 ```bash
-for v in OPENROUTER_API_KEY YOUTUBE_API_KEY; do
+for v in OPENROUTER_API_KEY YOUTUBE_API_KEY GITHUB_ISSUES_TOKEN; do
   echo "$v=$(op item get "$v — 2026-09-morning-reader" --account my.1password.com --vault Personal --fields credential --reveal)"
 done > .env
 ```
 
-The OpenRouter key is compiled into the APK, so never publish a built APK. The
+The OpenRouter key and the GitHub token are compiled into the APK, so never publish
+a built APK. The
 model is `google/gemini-3.8-flash`.

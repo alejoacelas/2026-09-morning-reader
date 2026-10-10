@@ -22,6 +22,7 @@ android {
         versionCode = 1
         versionName = "0.1"
         buildConfigField("String", "OPENROUTER_API_KEY", "\"${env.getProperty("OPENROUTER_API_KEY", "")}\"")
+        buildConfigField("String", "GITHUB_ISSUES_TOKEN", "\"${env.getProperty("GITHUB_ISSUES_TOKEN", "")}\"")
     }
 
     buildTypes {
