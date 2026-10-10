@@ -63,17 +63,18 @@ The README covers adding books and feeds.
 `.env` (ignored) holds the keys. All are in the personal 1Password account
 (`my.1password.com`), vault `Personal`, field `credential`.
 
-| Variable | 1Password item |
+| Variable | 1Password item (ID) |
 | --- | --- |
-| `OPENROUTER_API_KEY` | `OPENROUTER_API_KEY — 2026-09-morning-reader` |
-| `YOUTUBE_API_KEY` | `YOUTUBE_API_KEY — 2026-09-morning-reader` (Google Cloud project `morning-reader-27191`, `alejoacelas@gmail.com`) |
-| `GITHUB_ISSUES_TOKEN` | `GITHUB_ISSUES_TOKEN — 2026-09-morning-reader` (fine-grained token for this repository only, Issues read and write) |
+| `OPENROUTER_API_KEY` | `OPENROUTER_API_KEY — 2026-09-morning-reader` (`7x77hjicvqnnhnj7bpa46vh6ya`) |
+| `YOUTUBE_API_KEY` | `YOUTUBE_API_KEY — 2026-09-morning-reader` (`xwm7xqceh6je7wnnghhfqmpfue`; Google Cloud project `morning-reader-27191`, `alejoacelas@gmail.com`) |
+| `GITHUB_ISSUES_TOKEN` | `GITHUB_ISSUES_TOKEN — 2026-09-morning-reader` (`n2bc52jki6ebzrstlw2hg25ure`; fine-grained token for this repository only, Issues read and write, expires 2027-10-09) |
 
-Rebuild `.env` with:
+Two items share each of the first two names, so fetch by ID. Rebuild `.env` with:
 
 ```bash
-for v in OPENROUTER_API_KEY YOUTUBE_API_KEY GITHUB_ISSUES_TOKEN; do
-  echo "$v=$(op item get "$v — 2026-09-morning-reader" --account my.1password.com --vault Personal --fields credential --reveal)"
+for pair in OPENROUTER_API_KEY:7x77hjicvqnnhnj7bpa46vh6ya YOUTUBE_API_KEY:xwm7xqceh6je7wnnghhfqmpfue \
+            GITHUB_ISSUES_TOKEN:n2bc52jki6ebzrstlw2hg25ure; do
+  echo "${pair%%:*}=$(op item get "${pair#*:}" --account my.1password.com --fields credential --reveal)"
 done > .env
 ```
 
