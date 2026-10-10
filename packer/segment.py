@@ -159,6 +159,8 @@ def segment(title: str, author: str, paragraphs: list[str], language: str = "Eng
             title=title, author=author, language=language, part=part, target=TARGET_WORDS, min=MIN_WORDS,
             max=MAX_WORDS, book_fields=BOOK_FIELDS if first else "",
             book_schema=BOOK_SCHEMA if first else "", text=lines))
+        if isinstance(reply, list):  # later windows sometimes drop the {"blocks": ...} wrapper
+            reply = {"blocks": reply}
         if first:
             book = {k: reply.get(k) for k in ("summary", "year", "origin", "playlist_prompts",
                                              "video_queries")}
