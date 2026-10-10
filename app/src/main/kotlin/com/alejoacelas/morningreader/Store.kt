@@ -204,6 +204,19 @@ object Store {
 
     fun restore(key: String) = update { s -> s.copy(archived = s.archived - key, pendingArchive = s.pendingArchive - key) }
 
+    /** The choice made for a book after a block; an archived book counts as "done with this". */
+    fun choiceFor(bookId: String, s: AppState = _state.value): BookChoice? =
+        if (bookId in s.archived) BookChoice.Done else BookChoice.entries.firstOrNull { it.key == s.bookChoices[bookId] }
+
+    /** Sets (or with null, clears) a book's choice. "Done with this" archives the book right away. */
+    fun setChoice(bookId: String, choice: BookChoice?) = update { s ->
+        s.copy(
+            bookChoices = if (choice == null || choice == BookChoice.Done) s.bookChoices - bookId else s.bookChoices + (bookId to choice.key),
+            archived = if (choice == BookChoice.Done) s.archived + bookId else s.archived - bookId,
+            pendingArchive = s.pendingArchive - bookId,
+        )
+    }
+
     /** Moves swiped cards into the archive and drops a block in progress from an archived book. */
     private fun applyArchive() = update { s ->
         val archived = s.archived + s.pendingArchive

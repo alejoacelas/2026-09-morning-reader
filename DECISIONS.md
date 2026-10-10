@@ -22,6 +22,10 @@
   logged for `./pack pull`.
 - Swiping a card archives the whole book or post, at the user's choice, not just
   that block.
+- The reader, not an algorithm, decides which books lead the session. After a block,
+  "keep going" puts the book first on Today, "maybe later" puts it last, and "done
+  with this" archives it like a swipe. Skipping the choice leaves the book where it
+  was, so a choice is never forced.
 
 ### Do the heavy work once, on the Mac
 
@@ -69,3 +73,9 @@ Trial and The Mysterious Affair at Styles, chosen from the user's to-read list.
 
 After the first week: notes, Ask, character notes, swipe-to-archive (whole book),
 5-minute cap on time away, and short "fits" picks near the end of the budget.
+
+### 2026-10-10
+
+Added keep going / maybe later / done with this after each block, so the session
+can scale to more books without the reader re-sorting them. The selection menu keeps
+only Explain, Ask, Note and Copy.

@@ -42,6 +42,7 @@ import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -351,6 +352,10 @@ private fun AfterBlock(item: ReadItem, state: AppState) {
             Text("That would take you past today's limit. It'll be here tomorrow.",
                 style = MaterialTheme.typography.bodyMedium)
         }
+        Spacer(Modifier.height(14.dp))
+        Text("Next time, ${book.title}…", style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        BookChoiceRow(book.id, state)
     }
     val videos = item.videos.filter { it.youtubeId !in state.watched }.take(2)
     if (videos.isNotEmpty()) {
@@ -364,6 +369,27 @@ private fun AfterBlock(item: ReadItem, state: AppState) {
     }
     Spacer(Modifier.height(10.dp))
     OutlinedButton(onClick = { nav.top(Screen.Today) }, modifier = Modifier.fillMaxWidth()) { Text("Back to today") }
+}
+
+/**
+ * Keep going / Maybe later / Done with this for a book. Optional: with no tap the book keeps its
+ * place. Tapping the selected option again clears it.
+ */
+@Composable
+fun BookChoiceRow(bookId: String, state: AppState) {
+    val current = Store.choiceFor(bookId, state)
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        BookChoice.entries.forEach { choice ->
+            FilterChip(
+                selected = current == choice,
+                onClick = { Store.setChoice(bookId, if (current == choice) null else choice) },
+                label = { Text(choice.label, style = MaterialTheme.typography.labelMedium) },
+            )
+        }
+    }
+    current?.let {
+        Text(it.effect, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }
 
 /** A selection in a block, with the text around it to give the model context. */

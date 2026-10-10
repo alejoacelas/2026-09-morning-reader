@@ -69,7 +69,7 @@ fun LibraryScreen(modifier: Modifier) {
                 Text(book.summary, style = MaterialTheme.typography.bodyMedium, maxLines = 3)
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("$read of ${book.blocks.size} blocks read" + if (book.id in state.archived) " · archived" else "",
+                    Text("$read of ${book.blocks.size} blocks read" + (Store.choiceFor(book.id, state)?.let { " · " + it.label.lowercase() } ?: ""),
                         style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f))
                     if (book.id in state.archived) TextButton(onClick = { Store.restore(book.id) }) { Text("Restore") }
@@ -102,6 +102,8 @@ fun BookScreen(bookId: String, modifier: Modifier) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(8.dp))
                 Text(book.summary, style = MaterialTheme.typography.bodyLarge)
+                Spacer(Modifier.height(10.dp))
+                BookChoiceRow(book.id, state)
                 if (book.videos.isNotEmpty()) {
                     Spacer(Modifier.height(14.dp))
                     Text("SHORT VIDEOS", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)

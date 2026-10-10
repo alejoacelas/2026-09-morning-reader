@@ -3,7 +3,8 @@
 A personal Android app for a 45-minute morning reading session. It serves books
 as self-contained 5–15 minute blocks, mixed with long blog posts and short
 videos. You approve one block at a time, and a block can start only if it fits in
-the time left today.
+the time left today. After a block you can mark the book keep going, maybe later or
+done with this, and Today orders books by that choice.
 
 ## Build and install
 

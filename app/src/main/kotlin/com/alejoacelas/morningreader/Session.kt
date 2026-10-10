@@ -46,6 +46,8 @@ object Session {
             }
             if (block.id in taken) null else Card.Reading(block.toItem(book), label, minutesFor(block.words))
         }.shuffledBy(daySeed)
+            // "Keep going" books come first and "maybe later" ones last; books with no choice keep the daily shuffle.
+            .sortedBy { card -> rank(state.bookChoices[card.item.bookId]) }
 
         val postCards = posts.filter { it.id !in state.finished && it.id !in taken }.take(4)
             .map { Card.Reading(it.toItem(), "New post", minutesFor(it.words)) }
@@ -98,6 +100,12 @@ object Session {
     fun minutesLeft(item: ReadItem, progress: InProgress): Int {
         val total = Store.minutesFor(item.words)
         return maxOf(1, total - ((progress.activeSeconds + progress.awaySeconds) / 60).toInt())
+    }
+
+    private fun rank(choice: String?): Int = when (choice) {
+        BookChoice.Keep.key -> 0
+        BookChoice.Later.key -> 2
+        else -> 1
     }
 
     private fun <T> List<T>.shuffledBy(seed: Int): List<T> = shuffled(java.util.Random(seed.toLong()))

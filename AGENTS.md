@@ -21,6 +21,10 @@ they are served as short, self-contained passages under a daily time budget.
 - Each block can list a few main characters, described only with what the book has
   revealed by then.
 - Swiping a card right to left archives its whole book (or post) at the next reload.
+- After a block, the reader can mark its book **keep going** (Today lists it first),
+  **maybe later** (Today lists it last) or **done with this** (archived at once). The
+  choice is optional; a book with none keeps its place in the daily shuffle. The
+  book page shows and changes the same choice.
 - Each block and book has Spotify AI Playlist prompts. The app copies one and opens
   Spotify, since Spotify has no API for AI Playlists.
 

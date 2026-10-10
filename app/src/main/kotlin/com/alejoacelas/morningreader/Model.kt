@@ -128,4 +128,13 @@ data class AppState(
     /** Swiped away today; archived at the next reload. Book ids, post ids or "video-<id>". */
     val pendingArchive: Set<String> = emptySet(),
     val archived: Set<String> = emptySet(),
+    /** What to serve next from a book, chosen after a block: "keep" or "later". No entry means no choice. */
+    val bookChoices: Map<String, String> = emptyMap(),
 )
+
+/** What happens next with a book, chosen at the end of a block. Today's session ranks books by it. */
+enum class BookChoice(val key: String, val label: String, val effect: String) {
+    Keep("keep", "Keep going", "Its next block leads your session."),
+    Later("later", "Maybe later", "It moves to the bottom of your session."),
+    Done("done", "Done with this", "Archived. Restore it from the Library."),
+}
