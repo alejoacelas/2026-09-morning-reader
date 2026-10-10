@@ -137,7 +137,7 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
         }
     }
 
-    /** Explain (no question) or answer a typed question about a selection, and keep it in Highlights. */
+    /** Explain (no question) or answer a typed question about a selection. Asks show in Notes; Explains are only kept. */
     fun lookUp(sel: Selection, question: String?) {
         lookup = Lookup(sel.text, question = question)
         scope.launch {
@@ -146,10 +146,9 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
                 else Ai.answer(question, sel.text, sel.context, item.source, item.language)
             }.fold(
                 { answer ->
-                    val saved = if (question == null) answer else "Q: $question\n$answer"
                     Store.update { s ->
-                        s.copy(highlights = listOf(Highlight(sel.text, saved, item.source + " · " + item.title,
-                            System.currentTimeMillis())) + s.highlights)
+                        s.copy(highlights = listOf(Highlight(sel.text, answer, item.source + " · " + item.title,
+                            System.currentTimeMillis(), question)) + s.highlights)
                     }
                     Lookup(sel.text, question = question, answer = answer)
                 },

@@ -12,7 +12,7 @@
   ./pack wishlist folders             show bookmark folders that look meant for books
   ./pack wishlist folder NAME         use this bookmarks folder for the wish list
   ./pack opml FILE                    push a feed list (OPML) for the app to import
-  ./pack pull                         copy notes, highlights and shortfalls from the phone
+  ./pack pull                         copy notes, Ask answers and shortfalls from the phone
 """
 
 import argparse
@@ -179,7 +179,7 @@ def main() -> None:
     wish.add_argument("--limit", type=int, default=3, help="most books to build at once (default 3)")
     wish.add_argument("--no-push", action="store_true")
     sub.add_parser("opml", help="push an OPML feed list").add_argument("file", type=Path)
-    sub.add_parser("pull", help="copy notes, highlights and shortfalls from the phone into cache/phone/")
+    sub.add_parser("pull", help="copy notes, Ask answers and shortfalls from the phone into cache/phone/")
     args = parser.parse_args()
 
     if args.command == "search":
@@ -242,8 +242,12 @@ def main() -> None:
     elif args.command == "pull":
         out = ROOT / "cache" / "phone"
         out.mkdir(parents=True, exist_ok=True)
-        subprocess.run([str(ADB_PHONE), "pull", f"{PHONE_DIR}/exports/.", str(out)], check=True)
-        print(f"Saved to {out.relative_to(ROOT)}/ (notes.jsonl, highlights.json, shortfalls.json)")
+        names = ["notes.jsonl", "asks.json", "shortfalls.json"]
+        for name in names:
+            subprocess.run([str(ADB_PHONE), "pull", f"{PHONE_DIR}/exports/{name}", str(out)],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        got = [n for n in names if (out / n).exists()]
+        print(f"Saved to {out.relative_to(ROOT)}/: {', '.join(got) or 'nothing yet'}")
 
 
 if __name__ == "__main__":

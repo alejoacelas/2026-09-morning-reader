@@ -8,7 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoStories
-import androidx.compose.material.icons.outlined.Bookmarks
+import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.Icon
@@ -34,7 +34,7 @@ import kotlinx.coroutines.launch
 sealed interface Screen {
     data object Today : Screen
     data object Library : Screen
-    data object Highlights : Screen
+    data object Notes : Screen
     data object Settings : Screen
     data class Book(val id: String) : Screen
     data class Reader(val itemId: String) : Screen
@@ -118,7 +118,7 @@ private fun AppRoot() {
     val nav = remember { Nav(stack, { msg -> scope.launch { snackbar.showSnackbar(msg) } }, context) }
     BackHandler(enabled = stack.size > 1) { nav.back() }
     val current = stack.last()
-    val topLevel = current in listOf(Screen.Today, Screen.Library, Screen.Highlights, Screen.Settings)
+    val topLevel = current in listOf(Screen.Today, Screen.Library, Screen.Notes, Screen.Settings)
 
     CompositionLocalProvider(LocalNav provides nav) {
         Scaffold(
@@ -128,7 +128,7 @@ private fun AppRoot() {
                 if (topLevel) NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
                     Tab(current, Screen.Today, "Today", Icons.Outlined.WbSunny)
                     Tab(current, Screen.Library, "Library", Icons.Outlined.AutoStories)
-                    Tab(current, Screen.Highlights, "Highlights", Icons.Outlined.Bookmarks)
+                    Tab(current, Screen.Notes, "Notes", Icons.Outlined.EditNote)
                     Tab(current, Screen.Settings, "Settings", Icons.Outlined.Settings)
                 }
             },
@@ -137,7 +137,7 @@ private fun AppRoot() {
             when (current) {
                 Screen.Today -> TodayScreen(modifier)
                 Screen.Library -> LibraryScreen(modifier)
-                Screen.Highlights -> HighlightsScreen(modifier)
+                Screen.Notes -> NotesScreen(modifier)
                 Screen.Settings -> SettingsScreen(modifier)
                 is Screen.Book -> BookScreen(current.id, modifier)
                 // Keyed so each block gets fresh state (scroll position, text view, selection handler).

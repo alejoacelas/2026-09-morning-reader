@@ -68,11 +68,13 @@ Each YouTube channel searched costs 100 of the 10,000 free daily quota units, so
 six channels about 16 books a day can be searched; when the quota runs out the other
 sources still work and `./pack sources <id>` adds videos the next day.
 
-## Notes and highlights
+## Notes
 
 Select text while reading to Explain it, Ask a question about it, or add a Note.
-Notes are saved for later and aren't shown in the app. `./pack pull` copies notes,
-highlights and the log of times nothing fit the minutes left into `cache/phone/`.
+The Notes tab lists your notes and your questions with their answers, each with the
+book, block and text you selected. Explain answers aren't listed. `./pack pull`
+copies the notes, the questions and answers, and the log of times nothing fit the
+minutes left into `cache/phone/`.
 
 ## Blog feeds
 

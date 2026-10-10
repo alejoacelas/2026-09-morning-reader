@@ -17,7 +17,9 @@ they are served as short, self-contained passages under a daily time budget.
 - Selecting text offers **Explain** (defines 1–2 words, explains longer passages),
   **Ask** (a typed question) and **Note**. Explain and Ask send the selection's
   paragraph and its neighbours as context and answer in the language of the text.
-  Notes go to `files/exports/notes.jsonl` on the phone and are never shown in the app.
+  The Notes tab lists Notes and Asks with their book, block and selection; Explain
+  lookups are kept in state but not shown. Notes are stored in
+  `files/exports/notes.jsonl` and Asks are exported to `files/exports/asks.json`.
 - Each block can list a few main characters, described only with what the book has
   revealed by then.
 - Swiping a card right to left archives its whole book (or post) at the next reload.

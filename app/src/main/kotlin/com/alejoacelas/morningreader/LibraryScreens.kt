@@ -152,22 +152,39 @@ fun BookScreen(bookId: String, modifier: Modifier) {
     }
 }
 
+/** One row of the Notes tab: a note or an Ask, on a passage of a book. */
+private class NoteEntry(val at: Long, val where: String, val selection: String, val label: String, val text: String,
+                        val answer: String? = null)
+
+/** Notes and Ask answers, newest first, each with its book, block and the text selected. Explains aren't shown. */
 @Composable
-fun HighlightsScreen(modifier: Modifier) {
+fun NotesScreen(modifier: Modifier) {
     val state by Store.state.collectAsState()
-    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        item { ScreenTitle("Highlights") }
-        if (state.highlights.isEmpty()) item {
-            Text("Select text while reading and tap Explain. Answers are kept here.",
+    val notes by Store.notes.collectAsState()
+    val entries = remember(state.highlights, notes) {
+        (notes.map { NoteEntry(it.at, "${it.source} · ${it.blockTitle}", it.selection, "Note", it.note) } +
+            state.highlights.mapNotNull { h ->
+                h.askedQuestion?.let { NoteEntry(h.at, h.source, h.text, "Ask", it, h.plainAnswer) }
+            }).sortedByDescending { it.at }
+    }
+    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(22.dp)) {
+        item { ScreenTitle("Notes") }
+        if (entries.isEmpty()) item {
+            Text("Select text while reading and tap Note or Ask. Your notes and answers to your questions are kept here.",
                 style = MaterialTheme.typography.bodyLarge)
         }
-        items(state.highlights, key = { it.at }) { h ->
+        items(entries, key = { it.label + it.at }) { e ->
             Column {
-                Text(h.source.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                Text(e.where.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.height(4.dp))
-                Text("“${h.text}”", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(4.dp))
-                Text(h.answer, style = MaterialTheme.typography.bodyMedium)
+                Text("“${e.selection}”", style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 6)
+                Spacer(Modifier.height(6.dp))
+                Text(if (e.answer != null) "Q: ${e.text}" else e.text, style = MaterialTheme.typography.titleMedium)
+                e.answer?.let {
+                    Spacer(Modifier.height(4.dp))
+                    Text(it, style = MaterialTheme.typography.bodyMedium)
+                }
             }
         }
     }

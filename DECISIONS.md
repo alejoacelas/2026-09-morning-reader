@@ -30,14 +30,15 @@
 ### Do the heavy work once, on the Mac
 
 - `./pack` segments each book with Gemini once and pushes a JSON pack. The phone
-  only calls the model for highlight lookups and blog-post hooks, so mornings don't
+  only calls the model for Explain and Ask and for blog-post hooks, so mornings don't
   depend on the Mac.
-- Hooks, recaps, summaries and highlight answers are written in the book's
+- Hooks, recaps, summaries and Explain and Ask answers are written in the book's
   language.
 - Character notes and standalone flags are added by a separate pass
   (`./pack annotate`) that keeps block ids, so existing packs gain them without
   losing reading progress. Re-segmenting a book changes its block ids.
-- Notes are private and export-only: never displayed in the app.
+- The Notes tab shows what the reader wrote or asked: Notes and Asks with their
+  answers. Explain lookups are quick definitions, so they are kept but not listed.
 - Gemini 3.8 Flash via OpenRouter, with minimal reasoning for lookups, at the
   user's request.
 
@@ -107,6 +108,9 @@ got at least one item (8 of 8): In Our Time covered six, Gutenberg biographies t
 and the Spanish books came through Fundación Juan March and In Our Time's Lorca.
 
 Added feature requests from Settings, filed as GitHub issues.
+
+Replaced the Highlights tab with Notes, at the user's request: it lists Notes and
+Asks, and Explain lookups no longer appear.
 
 Added the wish list from a Chrome bookmarks folder. Its name and contents stay in
 `cache/` because the repository is public.

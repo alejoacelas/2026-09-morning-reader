@@ -111,9 +111,18 @@ data class Feed(val url: String, val title: String)
 data class Highlight(
     val text: String,
     val answer: String,
+    /** "Book · block". */
     val source: String,
     val at: Long,
-)
+    /** The typed question for an Ask; null for an Explain. */
+    val question: String? = null,
+) {
+    /** Asks saved before `question` existed kept it as "Q: …" on the answer's first line. */
+    val askedQuestion: String?
+        get() = question ?: answer.takeIf { it.startsWith("Q: ") }?.substringBefore('\n')?.removePrefix("Q: ")
+    val plainAnswer: String
+        get() = if (question == null && answer.startsWith("Q: ")) answer.substringAfter('\n') else answer
+}
 
 /**
  * The block currently being read. It can always be finished, even past the budget.

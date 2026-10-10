@@ -51,6 +51,9 @@ object Store {
     private val _posts = MutableStateFlow<List<BlogPost>>(emptyList())
     val posts: StateFlow<List<BlogPost>> = _posts
     val loaded = MutableStateFlow(false)
+    /** Notes from exports/notes.jsonl, newest first. */
+    private val _notes = MutableStateFlow<List<Note>>(emptyList())
+    val notes: StateFlow<List<Note>> = _notes
 
     private val stateFile get() = File(appContext.filesDir, "state.json")
     private val postsDir get() = File(appContext.filesDir, "posts").apply { mkdirs() }
@@ -93,6 +96,8 @@ object Store {
             importOpml(f.readText())
             f.renameTo(File(f.parentFile, f.name + ".imported"))
         }
+        _notes.value = File(exportsDir, "notes.jsonl").takeIf { it.exists() }?.readLines().orEmpty()
+            .mapNotNull { line -> runCatching { json.decodeFromString<Note>(line) }.getOrNull() }.sortedByDescending { it.at }
         applyArchive()
         packsSignature = currentSignature()
         loaded.value = true
@@ -188,14 +193,18 @@ object Store {
         synchronized(this@Store) {
             File(exportsDir, "notes.jsonl").appendText(json.encodeToString(Note.serializer(), note) + "\n")
         }
+        _notes.value = listOf(note) + _notes.value
     }
 
-    /** Writes highlights and shortfalls next to the notes so one `adb pull` gets everything. */
+    /** Writes Ask answers and shortfalls next to the notes so `./pack pull` gets what the Notes tab shows. */
     fun writeExports() = scope.launch {
         val s = _state.value
         val pretty = Json { prettyPrint = true; encodeDefaults = true }
-        File(exportsDir, "highlights.json").writeText(
-            pretty.encodeToString(kotlinx.serialization.builtins.ListSerializer(Highlight.serializer()), s.highlights))
+        val asks = s.highlights.mapNotNull { h ->
+            h.askedQuestion?.let { Highlight(h.text, h.plainAnswer, h.source, h.at, it) }
+        }
+        File(exportsDir, "asks.json").writeText(
+            pretty.encodeToString(kotlinx.serialization.builtins.ListSerializer(Highlight.serializer()), asks))
         File(exportsDir, "shortfalls.json").writeText(
             pretty.encodeToString(kotlinx.serialization.builtins.ListSerializer(Shortfall.serializer()), s.shortfalls))
     }
