@@ -58,16 +58,16 @@
 
 ### Pick new books from the user's own wish list
 
-- Further books come from a Chrome bookmarks folder the user already keeps (`Books`
-  on the bookmarks bar), read when the packer is asked (`./pack wishlist`), never on a
+- Further books come from a Chrome bookmarks folder the user already keeps for books,
+  read when the packer is asked (`./pack wishlist`), never on a
   schedule. The folder is a setting, since Chrome has no notion of a book folder.
 - The fixed first shelf (`./pack starter`) and one-off `./pack add` stay as they are.
 - Anything derived from the bookmarks lives in the ignored `cache/`.
 
 ## Open questions
 
-- **Wish-list books that aren't public domain.** Of 91 books in the folder, 3 are on
-  Gutenberg. The other 88 have no source yet.
+- **Wish-list books that aren't public domain.** Most books in the wish list are
+  modern and not on Gutenberg, so they have no source yet.
 
 ## Details
 
@@ -100,5 +100,5 @@ Replaced the broad YouTube search with trusted sources. On the first shelf every
 got at least one item (8 of 8): In Our Time covered six, Gutenberg biographies two,
 and the Spanish books came through Fundación Juan March and In Our Time's Lorca.
 
-The wish list reads the `Books` folder of Chrome bookmarks, the only folder plainly
-meant for books (`Reading Record/Books read` holds finished ones).
+Added the wish list from a Chrome bookmarks folder. Its name and contents stay in
+`cache/` because the repository is public.

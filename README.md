@@ -44,7 +44,7 @@ files each time you ask, so a book bookmarked this morning shows up the next run
 ./pack wishlist                      # list wished-for books and whether each is on Gutenberg
 ./pack wishlist build                # build and push up to 3 that aren't built yet (--limit N)
 ./pack wishlist folders              # show bookmark folders that look meant for books
-./pack wishlist folder "Books"       # choose the folder (saved in cache/settings.json)
+./pack wishlist folder "To read"     # choose the folder (saved in cache/settings.json)
 ```
 
 `starter` builds the fixed first shelf and `add` builds any one book; use `wishlist
