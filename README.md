@@ -35,6 +35,24 @@ loads new packs when it opens or when you tap refresh.
 ./pack push                          # re-push every built pack
 ```
 
+## Wish list
+
+A Chrome bookmarks folder doubles as a wish list. The packer reads Chrome's bookmark
+files each time you ask, so a book bookmarked this morning shows up the next run.
+
+```bash
+./pack wishlist                      # list wished-for books and whether each is on Gutenberg
+./pack wishlist build                # build and push up to 3 that aren't built yet (--limit N)
+./pack wishlist folders              # show bookmark folders that look meant for books
+./pack wishlist folder "Books"       # choose the folder (saved in cache/settings.json)
+```
+
+`starter` builds the fixed first shelf and `add` builds any one book; use `wishlist
+build` to pick the next books from what you've bookmarked. Only public-domain books
+are on Gutenberg, so most modern titles are listed as "not on Gutenberg". The first
+check of new bookmarks costs about $0.03 in Gemini calls; results are cached in
+`cache/wishlist.json`.
+
 A pack costs about $0.02–0.65 in Gemini calls, roughly $0.13 per 100,000 words,
 and takes about a minute.
 

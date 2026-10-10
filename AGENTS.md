@@ -40,6 +40,9 @@ they are served as short, self-contained passages under a daily time budget.
 - `packer/` and `./pack` — Mac-side book preparation: Gutenberg search, Standard
   Ebooks edition when one exists, Gemini segmentation, secondary material from
   trusted sources, push to phone.
+- `packer/wishlist.py` reads a Chrome bookmarks folder as a wish list
+  (`./pack wishlist`). The folder name is a setting in `cache/settings.json`; the
+  bookmarks are personal, so everything derived from them stays in `cache/`.
 - `docs/book-pack.md` — the book pack format both sides share.
 - `cache/` and `packs/` are ignored. `cache/` holds downloads and the user's
   private feed and reading lists; never commit it.

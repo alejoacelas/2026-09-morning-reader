@@ -7,6 +7,10 @@
   ./pack push                         push every built pack to the phone
   ./pack annotate [ID ...]            add character notes and standalone flags to built packs
   ./pack sources [ID ...]             find secondary material from trusted sources for built packs
+  ./pack wishlist                     list the wish list from a Chrome bookmarks folder
+  ./pack wishlist build [--limit 3]   build and push wish-list books found on Gutenberg
+  ./pack wishlist folders             show bookmark folders that look meant for books
+  ./pack wishlist folder NAME         use this bookmarks folder for the wish list
   ./pack opml FILE                    push a feed list (OPML) for the app to import
   ./pack pull                         copy notes, highlights and shortfalls from the phone
 """
@@ -18,7 +22,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import annotate, secondary, segment, sources
+from . import annotate, secondary, segment, sources, wishlist
 from .llm import Usage
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -114,6 +118,45 @@ def push(paths: list[Path], subdir: str = "packs") -> None:
     print("Open the app (or pull to refresh) to import.")
 
 
+def run_wishlist(args) -> None:
+    if args.action == "folder":
+        wishlist.choose(" ".join(args.name))
+        print(f"Wish list folder set to {' '.join(args.name)!r} (saved in cache/settings.json).")
+        return
+    chosen = wishlist.folder()
+    if args.action == "folders" or chosen is None:
+        if chosen is None:
+            print(f"No single bookmarks folder matches {wishlist.setting() or 'a books name'!r}.")
+        else:
+            print(f"Using {chosen[0]}")
+        print("Folders that look meant for books:")
+        for line in wishlist.candidates():
+            print(f"  {line}")
+        print("Choose one with ./pack wishlist folder NAME (its name or the end of its path).")
+        return
+    print(f"Wish list: {chosen[0]}")
+    entries = wishlist.entries()
+    books = [e for e in entries if e["is_book"]]
+    to_build = []
+    for e in books:
+        gid = e["gutenberg_id"]
+        status = ("built" if (PACKS / f"gutenberg-{gid}.json").exists() else f"Gutenberg #{gid}") if gid \
+            else "not on Gutenberg"
+        if gid and status != "built":
+            to_build.append(gid)
+        if args.action == "list":
+            print(f"  {status:<18} {e['title']}" + (f" — {e['author']}" if e["author"] else ""))
+    print(f"{len(books)} books ({len(entries) - len(books)} other bookmarks skipped), "
+          f"{sum(1 for e in books if e['gutenberg_id'])} on Gutenberg, {len(to_build)} not built yet.")
+    if args.action == "build":
+        paths = [build(str(gid)) for gid in list(dict.fromkeys(to_build))[:args.limit]]
+        print(f"Total Gemini cost this run: ${Usage.cost:.3f}")
+        if paths and not args.no_push:
+            push(paths)
+    elif Usage.cost:
+        print(f"Gemini cost: ${Usage.cost:.3f}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="pack", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -130,6 +173,11 @@ def main() -> None:
     sub.add_parser("tidy", help="re-apply text cleanup to built packs without rebuilding them")
     sec = sub.add_parser("sources", help="find secondary material from trusted sources for built packs")
     sec.add_argument("ids", nargs="*", help="Gutenberg ids (default: every pack without secondary material)")
+    wish = sub.add_parser("wishlist", help="list or build books from the Chrome bookmarks wish list")
+    wish.add_argument("action", nargs="?", default="list", choices=["list", "build", "folders", "folder"])
+    wish.add_argument("name", nargs="*", help="folder name, for `folder`")
+    wish.add_argument("--limit", type=int, default=3, help="most books to build at once (default 3)")
+    wish.add_argument("--no-push", action="store_true")
     sub.add_parser("opml", help="push an OPML feed list").add_argument("file", type=Path)
     sub.add_parser("pull", help="copy notes, highlights and shortfalls from the phone into cache/phone/")
     args = parser.parse_args()
@@ -185,6 +233,8 @@ def main() -> None:
                 block["words"] = sum(len(p.split()) for p in block["paragraphs"])
             path.write_text(json.dumps(pack, ensure_ascii=False, indent=1))
             print(f"  tidied {path.name}")
+    elif args.command == "wishlist":
+        run_wishlist(args)
     elif args.command == "push":
         push(sorted(PACKS.glob("*.json")))
     elif args.command == "opml":

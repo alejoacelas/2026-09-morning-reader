@@ -56,12 +56,18 @@
 - The repository is public. Feed lists, reading lists and downloads live in the
   ignored `cache/`, and keys live in `.env`.
 
+### Pick new books from the user's own wish list
+
+- Further books come from a Chrome bookmarks folder the user already keeps (`Books`
+  on the bookmarks bar), read when the packer is asked (`./pack wishlist`), never on a
+  schedule. The folder is a setting, since Chrome has no notion of a book folder.
+- The fixed first shelf (`./pack starter`) and one-off `./pack add` stay as they are.
+- Anything derived from the bookmarks lives in the ignored `cache/`.
+
 ## Open questions
 
-- **How to suggest further books.** The first shelf is a fixed, hand-picked list
-  from the user's to-read list (`STARTER` in `packer/__main__.py`). There are no
-  criteria or recommendation logic for choosing more; add books with `./pack add`
-  until this is decided.
+- **Wish-list books that aren't public domain.** Of 91 books in the folder, 3 are on
+  Gutenberg. The other 88 have no source yet.
 
 ## Details
 
@@ -93,3 +99,6 @@ only Explain, Ask, Note and Copy.
 Replaced the broad YouTube search with trusted sources. On the first shelf every book
 got at least one item (8 of 8): In Our Time covered six, Gutenberg biographies two,
 and the Spanish books came through Fundación Juan March and In Our Time's Lorca.
+
+The wish list reads the `Books` folder of Chrome bookmarks, the only folder plainly
+meant for books (`Reading Record/Books read` holds finished ones).
