@@ -62,6 +62,17 @@
   through a fine-grained token limited to this repository's issues and compiled into
   the APK. A request stays on the phone until GitHub accepts it.
 
+### Run the same app on the Boox as its home screen
+
+- The Boox Go7 runs the phone's APK. The app detects an Onyx device at runtime and
+  switches to a black-on-white theme without videos, Spotify, secondary material or
+  feature requests, which suit neither e-ink nor a dedicated reader. One build keeps
+  both devices on the same code.
+- On the Boox the app is the home screen, so the reader lands on Today. The launcher
+  role is an alias enabled only on Onyx devices, so the phone never offers the app as
+  a launcher. Boox's launcher stays installed and one button away, and switching back
+  is one `adb` command, with no reset.
+
 ### Keep private lists out of the public repository
 
 - The repository is public. Feed lists, reading lists and downloads live in the
@@ -118,3 +129,9 @@ Asks, and Explain lookups no longer appear.
 
 Added the wish list from a Chrome bookmarks folder. Its name and contents stay in
 `cache/` because the repository is public.
+
+### 2026-10-11
+
+Put the app on the Boox Go7 as its home screen, simplified for e-ink. Also set the
+Boox's auto power-off to never (device setting, not in this repository): after 15
+minutes asleep it was shutting down fully and needed a long-press cold boot.

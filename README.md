@@ -18,6 +18,31 @@ export ANDROID_HOME=~/Library/Android/sdk
 ~/best/dotfiles/bin/adb-phone install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
+## Boox e-reader
+
+The same APK runs on the Onyx Boox Go7, where it is the home screen. On an Onyx
+device the app turns black on white and leaves out videos, Spotify prompts,
+secondary material and feature requests. The grid icon on Today opens Boox's own
+launcher, for its library, other apps and settings.
+
+Every `adb-phone` and `./pack` command reaches the Boox when `PHONE_SERIAL=ec27fd9`
+is set, for example `PHONE_SERIAL=ec27fd9 ./pack push`. Wireless debugging must be
+on, and the Boox turns Wi-Fi off while asleep, so wake it first. Reading progress,
+the budget and feeds are kept separately on each device.
+
+After installing on the Boox, Boox may mark the app disabled; enable it and make it
+the home screen with:
+
+```bash
+b() { PHONE_SERIAL=ec27fd9 ~/best/dotfiles/bin/adb-phone "$@"; }
+b shell pm enable com.alejoacelas.morningreader
+b shell am start -n com.alejoacelas.morningreader/.MainActivity   # registers the home screen
+b shell cmd package set-home-activity com.alejoacelas.morningreader/.Home
+```
+
+To go back to Boox's launcher, run
+`b shell cmd package set-home-activity com.onyx/.StartupActivity`.
+
 ## Add books
 
 Books come from Project Gutenberg, using the Standard Ebooks edition when there is

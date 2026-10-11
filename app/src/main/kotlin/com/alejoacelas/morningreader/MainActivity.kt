@@ -21,6 +21,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
@@ -94,6 +97,11 @@ class MainActivity : ComponentActivity() {
         setContent { ReaderTheme { AppRoot() } }
     }
 
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        if (intent.hasCategory(android.content.Intent.CATEGORY_HOME)) Eink.homePresses.value++
+    }
+
     override fun onStop() {
         super.onStop()
         Store.writeExports()
@@ -116,7 +124,10 @@ private fun AppRoot() {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val nav = remember { Nav(stack, { msg -> scope.launch { snackbar.showSnackbar(msg) } }, context) }
-    BackHandler(enabled = stack.size > 1) { nav.back() }
+    // As the Boox home screen, Back on Today does nothing instead of closing and redrawing the app.
+    BackHandler(enabled = stack.size > 1 || Eink.on) { nav.back() }
+    val homePresses by Eink.homePresses.collectAsState()
+    LaunchedEffect(homePresses) { if (homePresses > 0) nav.top(Screen.Today) }
     val current = stack.last()
     val topLevel = current in listOf(Screen.Today, Screen.Library, Screen.Notes, Screen.Settings)
 

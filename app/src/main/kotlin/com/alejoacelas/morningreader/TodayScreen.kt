@@ -1,5 +1,6 @@
 package com.alejoacelas.morningreader
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Card
@@ -39,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -53,7 +56,7 @@ fun TodayScreen(modifier: Modifier) {
     val loaded by Store.loaded.collectAsState()
     val cards = remember(state.day, state.finished, state.watched, state.inProgress?.itemId, books, posts, state.wordsPerMinute,
         state.usedSecondsToday / 60, state.budgetMinutes, state.archived) {
-        Session.cards(state, books, posts)
+        Session.cards(state, books, posts).filterNot { Eink.on && it is Card.Watch }
     }
     val refreshing by Blogs.running.collectAsState()
     val used = (state.usedSecondsToday / 60).toInt()
@@ -65,6 +68,7 @@ fun TodayScreen(modifier: Modifier) {
         }
     }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     LazyColumn(modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp, 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -74,6 +78,9 @@ fun TodayScreen(modifier: Modifier) {
                     Text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE d MMMM")),
                         style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("This morning", style = MaterialTheme.typography.headlineMedium)
+                }
+                if (Eink.on) IconButton(onClick = { Eink.openBooxHome(context) }) {
+                    Icon(Icons.Outlined.Apps, contentDescription = "Boox home")
                 }
                 IconButton(onClick = {
                     scope.launch { Store.reload() }
@@ -155,6 +162,7 @@ fun SessionCard(card: Card, fits: Boolean, archiving: Boolean = false) {
         modifier = Modifier.fillMaxWidth().alpha(if (archiving) 0.25f else if (fits) 1f else 0.45f),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = if (Eink.on) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null,
     ) {
         Column(Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

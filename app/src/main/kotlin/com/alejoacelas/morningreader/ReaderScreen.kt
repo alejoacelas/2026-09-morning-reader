@@ -186,8 +186,8 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
             Text(item.source, style = MaterialTheme.typography.labelLarge, color = colors.onSurfaceVariant,
                 maxLines = 1, modifier = Modifier.weight(1f))
             // A dialog over the text, so the scroll position and the block's timer carry on underneath.
-            IconButton(onClick = { requesting = true }) { Icon(Icons.Outlined.Feedback, "Request a feature") }
-            if (item.playlistPrompts.isNotEmpty()) IconButton(onClick = { showMusic = true }) {
+            if (!Eink.on) IconButton(onClick = { requesting = true }) { Icon(Icons.Outlined.Feedback, "Request a feature") }
+            if (!Eink.on && item.playlistPrompts.isNotEmpty()) IconButton(onClick = { showMusic = true }) {
                 Icon(Icons.Outlined.MusicNote, "Music for this")
             }
             item.url?.takeIf { item.bookId == null }?.let { url ->
@@ -369,7 +369,7 @@ private fun AfterBlock(item: ReadItem, state: AppState) {
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         BookChoiceRow(book.id, state)
     }
-    val further = book?.secondary.orEmpty()
+    val further = book?.secondary.orEmpty().takeUnless { Eink.on }.orEmpty()
         .filter { it.url !in state.opened && (it.youtubeId == null || it.youtubeId !in state.watched) }.take(2)
     if (further.isNotEmpty()) {
         Spacer(Modifier.height(18.dp))
@@ -377,7 +377,7 @@ private fun AfterBlock(item: ReadItem, state: AppState) {
         further.forEach { SecondaryLink(it) }
     }
     // Packs built before trusted sources still carry videos from a broad search.
-    val videos = if (book?.secondary.isNullOrEmpty()) item.videos.filter { it.youtubeId !in state.watched }.take(2) else emptyList()
+    val videos = if (!Eink.on && book?.secondary.isNullOrEmpty()) item.videos.filter { it.youtubeId !in state.watched }.take(2) else emptyList()
     if (videos.isNotEmpty()) {
         Spacer(Modifier.height(18.dp))
         Text("SHORT VIDEOS", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)

@@ -7,5 +7,6 @@ class App : Application() {
         super.onCreate()
         Store.init(this)
         Blogs.schedule(this)
+        Eink.offerAsHome(this)
     }
 }

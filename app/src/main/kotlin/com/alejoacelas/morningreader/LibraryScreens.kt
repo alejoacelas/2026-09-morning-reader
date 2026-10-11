@@ -91,7 +91,7 @@ fun BookScreen(bookId: String, modifier: Modifier) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp)) {
                 IconButton(onClick = { nav.back() }) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back") }
                 Spacer(Modifier.weight(1f))
-                if (book.playlistPrompts.isNotEmpty()) IconButton(onClick = { showMusic = true }) {
+                if (!Eink.on && book.playlistPrompts.isNotEmpty()) IconButton(onClick = { showMusic = true }) {
                     Icon(Icons.Outlined.MusicNote, "Music for this book")
                 }
             }
@@ -104,13 +104,13 @@ fun BookScreen(bookId: String, modifier: Modifier) {
                 Text(book.summary, style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(10.dp))
                 BookChoiceRow(book.id, state)
-                if (book.secondary.isNotEmpty()) {
+                if (!Eink.on && book.secondary.isNotEmpty()) {
                     Spacer(Modifier.height(14.dp))
                     Text("GO DEEPER", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     book.secondary.forEach { s ->
                         SecondaryLink(s, dim = s.url in state.opened || s.youtubeId in state.watched)
                     }
-                } else if (book.videos.isNotEmpty()) {
+                } else if (!Eink.on && book.videos.isNotEmpty()) {
                     Spacer(Modifier.height(14.dp))
                     Text("SHORT VIDEOS", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     book.videos.forEach { v ->
@@ -253,7 +253,7 @@ fun SettingsScreen(modifier: Modifier) {
                 TextButton(onClick = { Store.update { s -> s.copy(feeds = s.feeds.filterNot { it.url == feed.url }) } }) { Text("Remove") }
             }
         }
-        item {
+        if (!Eink.on) item {
             Spacer(Modifier.height(16.dp))
             FeatureRequestBox()
         }

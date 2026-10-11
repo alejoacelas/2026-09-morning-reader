@@ -61,6 +61,11 @@ to `~/Library/Android/sdk`, run `./gradlew assembleDebug`, then
 `~/best/dotfiles/bin/adb-phone install -r app/build/outputs/apk/debug/app-debug.apk`.
 The README covers adding books and feeds.
 
+The app also runs on Alejo's Boox Go7 as its home screen; changes to shared screens
+show up there too, and `Eink.on` gates what the Boox leaves out. Install there by
+running the same commands with `PHONE_SERIAL=ec27fd9`; the README's Boox section
+covers enabling it and switching the home screen.
+
 ## Secrets
 
 `.env` (ignored) holds the keys. All are in the personal 1Password account
