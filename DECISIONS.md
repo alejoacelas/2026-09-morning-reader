@@ -39,8 +39,12 @@
   losing reading progress. Re-segmenting a book changes its block ids.
 - The Notes tab shows what the reader wrote or asked: Notes and Asks with their
   answers. Explain lookups are quick definitions, so they are kept but not listed.
-- Gemini 3.8 Flash via OpenRouter, with minimal reasoning for lookups, at the
-  user's request.
+- Gemini 3.8 Flash via OpenRouter, with minimal reasoning, for everything but Ask.
+  Ask uses Claude Opus 5.5 with low reasoning at the user's request (#2): about
+  $0.01 an answer against $0.001 on Gemini.
+- Explain is for a word or sentence the reader doesn't understand: it gives the
+  meaning briefly and names a period event or work only when the passage clearly
+  refers to one (#3).
 
 ### Take secondary material only from trusted sources
 

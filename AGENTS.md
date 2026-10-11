@@ -14,7 +14,7 @@ they are served as short, self-contained passages under a daily time budget.
   today plus its estimate fits the daily budget (45 minutes by default). The block
   in progress can always be finished.
 - Estimates use the reader's measured words per minute.
-- Selecting text offers **Explain** (defines 1–2 words, explains longer passages),
+- Selecting text offers **Explain** (the meaning of a word or sentence, briefly),
   **Ask** (a typed question) and **Note**. Explain and Ask send the selection's
   paragraph and its neighbours as context and answer in the language of the text.
   The Notes tab lists Notes and Asks with their book, block and selection; Explain
@@ -81,6 +81,7 @@ done > .env
 ```
 
 The OpenRouter key and the GitHub token are compiled into the APK, so never publish
-a built APK. The model is `google/gemini-3.8-flash`. API spending is approved:
+a built APK. The model is `google/gemini-3.8-flash`, except Ask, which uses
+`anthropic/claude-opus-5.5` with low reasoning. API spending is approved:
 build packs and rerun model calls without asking about cost. OpenRouter tops up
 automatically.
