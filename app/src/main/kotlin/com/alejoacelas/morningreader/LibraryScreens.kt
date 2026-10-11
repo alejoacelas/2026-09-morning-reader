@@ -205,33 +205,6 @@ fun SettingsScreen(modifier: Modifier) {
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { ScreenTitle("Settings") }
         item {
-            val context = androidx.compose.ui.platform.LocalContext.current
-            var request by remember { mutableStateOf("") }
-            Text("REQUEST A FEATURE", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-            OutlinedTextField(request, { request = it }, placeholder = { Text("What should the next version do?") },
-                minLines = 2, modifier = Modifier.fillMaxWidth())
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                val waiting = state.pendingRequests.size
-                Text(
-                    when {
-                        waiting > 0 && BuildConfig.GITHUB_ISSUES_TOKEN.isBlank() ->
-                            "$waiting saved on the phone. This build has no GitHub token; they'll be filed after an install that has one."
-                        waiting > 0 -> "$waiting waiting to be filed on GitHub. They'll go once the phone is online."
-                        state.lastFiledIssue > 0 -> "Last request filed as issue #${state.lastFiledIssue}."
-                        else -> "Filed as an issue on the app's GitHub repository."
-                    },
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
-                )
-                TextButton(enabled = request.isNotBlank(), onClick = {
-                    Requests.submit(context, request)
-                    request = ""
-                    nav.say("Request saved. Filing it on GitHub…")
-                }) { Text("Send") }
-            }
-            Spacer(Modifier.height(12.dp))
-        }
-        item {
             Text("DAILY LIMIT", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedButton(onClick = { Store.update { it.copy(budgetMinutes = (it.budgetMinutes - 5).coerceAtLeast(5)) } }) { Text("−5") }
@@ -279,6 +252,44 @@ fun SettingsScreen(modifier: Modifier) {
                 Text(feed.title.ifBlank { feed.url }, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                 TextButton(onClick = { Store.update { s -> s.copy(feeds = s.feeds.filterNot { it.url == feed.url }) } }) { Text("Remove") }
             }
+        }
+        item {
+            Spacer(Modifier.height(16.dp))
+            FeatureRequestBox()
+        }
+    }
+}
+
+/** A feature request, filed as a GitHub issue. Used at the bottom of Settings and from the reader. */
+@Composable
+fun FeatureRequestBox(onSent: () -> Unit = {}) {
+    val nav = LocalNav.current
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val state by Store.state.collectAsState()
+    var request by remember { mutableStateOf("") }
+    Column {
+        Text("REQUEST A FEATURE", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        OutlinedTextField(request, { request = it }, placeholder = { Text("What should the next version do?") },
+            minLines = 2, modifier = Modifier.fillMaxWidth())
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val waiting = state.pendingRequests.size
+            Text(
+                when {
+                    waiting > 0 && BuildConfig.GITHUB_ISSUES_TOKEN.isBlank() ->
+                        "$waiting saved on the phone. This build has no GitHub token; they'll be filed after an install that has one."
+                    waiting > 0 -> "$waiting waiting to be filed on GitHub. They'll go once the phone is online."
+                    state.lastFiledIssue > 0 -> "Last request filed as issue #${state.lastFiledIssue}."
+                    else -> "Filed as an issue on the app's GitHub repository."
+                },
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(enabled = request.isNotBlank(), onClick = {
+                Requests.submit(context, request)
+                request = ""
+                nav.say("Request saved. Filing it on GitHub…")
+                onSent()
+            }) { Text("Send") }
         }
     }
 }
