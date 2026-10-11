@@ -52,16 +52,22 @@ object Ai {
             }
         }
 
-    /** The single highlight prompt: define short selections, explain longer ones. */
+    /**
+     * Explain is for an unknown word or a sentence that eludes the reader: give the meaning, briefly,
+     * and mention a real event, person or work of the time only when the passage clearly refers to one.
+     */
     suspend fun explain(selection: String, paragraph: String, source: String, language: String?): String {
         val words = selection.trim().split(Regex("\\s+")).size
         val task = if (words <= 2)
-            "Define the highlighted word or phrase as it is used here, in one or two sentences."
+            "Say what the selected word or phrase means as it is used here, in one or two short sentences. " +
+                "If it is old-fashioned, foreign or a period term, say so in a few words."
         else
-            "Explain the highlighted passage in two to four sentences: what it means here, and any " +
-                "allusion, reference, historical background or step in the argument a reader might miss."
+            "Say plainly what the selected passage means: paraphrase it, untangling any difficult syntax, " +
+                "irony or unfamiliar word, in one to three short sentences. Don't summarise the story or " +
+                "interpret its place in the book. Only if the passage clearly refers to a real event, person, " +
+                "custom or other work, add one short sentence naming it."
         val prompt = """
-            Someone is reading "$source" and highlighted: "$selection"
+            Someone is reading "$source" and selected: "$selection"
 
             The text around it (the paragraph it is in, with the paragraphs before and after):
             $paragraph
