@@ -32,7 +32,8 @@ they are served as short, self-contained passages under a daily time budget.
   author, found only in the trusted sources listed in `packer/trusted-sources.toml`
   and screened by Gemini. Videos of 10 minutes or less are also blocks on Today; longer
   material opens outside the session and doesn't count toward the budget.
-- The top of Settings takes feature requests. Each is filed as a GitHub issue on this
+- Feature requests come from the bottom of Settings or from the reader's top bar,
+  which opens the same box over the text without leaving the block. Each is filed as a GitHub issue on this
   repository when sent; if that fails it stays on the phone and a background job
   retries once there's network.
 - Each block and book has Spotify AI Playlist prompts. The app copies one and opens

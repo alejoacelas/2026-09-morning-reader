@@ -38,6 +38,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.Feedback
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -102,6 +103,7 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
     var asking by remember { mutableStateOf<Selection?>(null) }
     var noting by remember { mutableStateOf<Selection?>(null) }
     var showMusic by remember { mutableStateOf(false) }
+    var requesting by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
@@ -183,6 +185,8 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
             IconButton(onClick = { nav.back() }) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back") }
             Text(item.source, style = MaterialTheme.typography.labelLarge, color = colors.onSurfaceVariant,
                 maxLines = 1, modifier = Modifier.weight(1f))
+            // A dialog over the text, so the scroll position and the block's timer carry on underneath.
+            IconButton(onClick = { requesting = true }) { Icon(Icons.Outlined.Feedback, "Request a feature") }
             if (item.playlistPrompts.isNotEmpty()) IconButton(onClick = { showMusic = true }) {
                 Icon(Icons.Outlined.MusicNote, "Music for this")
             }
@@ -276,6 +280,13 @@ fun ReaderScreen(itemId: String, modifier: Modifier) {
             Store.saveNote(Note(System.currentTimeMillis(), item.id, item.bookId, item.source, item.title,
                 sel.paragraph, sel.start, sel.end, sel.text, text))
             Toast.makeText(context, "Note saved", Toast.LENGTH_SHORT).show()
+        }
+    }
+    if (requesting) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { requesting = false }) {
+            Surface(shape = RoundedCornerShape(20.dp), color = colors.surfaceContainerHigh) {
+                Column(Modifier.padding(20.dp)) { FeatureRequestBox(onSent = { requesting = false }) }
+            }
         }
     }
     if (showMusic) {

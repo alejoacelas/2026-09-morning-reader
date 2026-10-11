@@ -85,7 +85,8 @@ Settings also adds and removes single feeds.
 
 ## Feature requests
 
-Type a request at the top of Settings and tap Send. It becomes an issue on this
+Type a request at the bottom of Settings, or tap the request icon next to the music
+note while reading, and tap Send. It becomes an issue on this
 repository. Requests made offline wait on the phone and go out once it's online.
 
 ## Secrets
