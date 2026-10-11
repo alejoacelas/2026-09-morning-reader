@@ -16,22 +16,25 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.concurrent.TimeUnit
 
-/** Gemini Flash through OpenRouter. */
+/** Models through OpenRouter: Gemini Flash for everything except Ask, which uses Claude Opus. */
 object Ai {
     private const val MODEL = "google/gemini-3.8-flash"
+    /** Ask gets a stronger model at the user's request; about $0.01 an answer against $0.001 on Gemini. */
+    private const val ASK_MODEL = "anthropic/claude-opus-5.5"
     val http: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(90, TimeUnit.SECONDS)
         .build()
 
-    suspend fun ask(prompt: String, maxTokens: Int = 600, jsonReply: Boolean = false): String =
+    suspend fun ask(prompt: String, maxTokens: Int = 600, jsonReply: Boolean = false,
+                    model: String = MODEL, effort: String = "minimal"): String =
         withContext(Dispatchers.IO) {
             val body = buildJsonObject {
-                put("model", MODEL)
+                put("model", model)
                 putJsonArray("messages") {
                     add(buildJsonObject { put("role", "user"); put("content", prompt) })
                 }
-                putJsonObject("reasoning") { put("effort", "minimal") }
+                putJsonObject("reasoning") { put("effort", effort) }
                 put("max_tokens", maxTokens)
                 if (jsonReply) putJsonObject("response_format") { put("type", "json_object") }
             }
@@ -82,7 +85,8 @@ object Ai {
             question is in another language, in which case use the question's language. Use only what
             the text so far reveals; don't give away later events. Plain text, no preamble, no markdown.
         """.trimIndent()
-        return ask(prompt, maxTokens = 500)
+        // Low reasoning on Opus spends part of max_tokens thinking, so leave room for it.
+        return ask(prompt, maxTokens = 2000, model = ASK_MODEL, effort = "low")
     }
 
     /** A hook line and a Spotify AI Playlist prompt for a blog post. */
