@@ -16,39 +16,44 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.concurrent.TimeUnit
 
-/** Models through OpenRouter: Gemini Flash for everything except Ask, which uses Claude Opus. */
+/** Direct Claude API: Opus by default; Haiku for latency-sensitive reading helpers. */
 object Ai {
-    private const val MODEL = "google/gemini-3.8-flash"
-    /** Ask gets a stronger model at the user's request; about $0.01 an answer against $0.001 on Gemini. */
-    private const val ASK_MODEL = "anthropic/claude-opus-5.5"
+    private const val MODEL = "claude-opus-5-5"
+    private const val FAST_MODEL = "claude-haiku-5-5"
     val http: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(90, TimeUnit.SECONDS)
         .build()
 
     suspend fun ask(prompt: String, maxTokens: Int = 600, jsonReply: Boolean = false,
-                    model: String = MODEL, effort: String = "minimal"): String =
+                    model: String = MODEL, effort: String = "low"): String =
         withContext(Dispatchers.IO) {
             val body = buildJsonObject {
                 put("model", model)
                 putJsonArray("messages") {
                     add(buildJsonObject { put("role", "user"); put("content", prompt) })
                 }
-                putJsonObject("reasoning") { put("effort", effort) }
+                putJsonObject("output_config") { put("effort", effort) }
+                if (model == FAST_MODEL) putJsonObject("thinking") { put("type", "disabled") }
                 put("max_tokens", maxTokens)
-                if (jsonReply) putJsonObject("response_format") { put("type", "json_object") }
+                if (jsonReply) put("system", "Return only valid JSON. No Markdown fences or commentary.")
             }
             val request = Request.Builder()
-                .url("https://openrouter.ai/api/v1/chat/completions")
-                .header("Authorization", "Bearer ${BuildConfig.OPENROUTER_API_KEY}")
-                .header("X-Title", "morning-reader")
+                .url("https://api.anthropic.com/v1/messages")
+                .header("x-api-key", BuildConfig.ANTHROPIC_API_KEY)
+                .header("anthropic-version", "2023-06-01")
                 .post(body.toString().toRequestBody("application/json".toMediaType()))
                 .build()
             http.newCall(request).execute().use { response ->
                 val text = response.body.string()
-                check(response.isSuccessful) { "OpenRouter ${response.code}: ${text.take(200)}" }
-                Store.json.parseToJsonElement(text).jsonObject["choices"]!!.jsonArray[0]
-                    .jsonObject["message"]!!.jsonObject["content"]!!.jsonPrimitive.content.trim()
+                check(response.isSuccessful) { "Claude ${response.code}: ${text.take(200)}" }
+                val data = Store.json.parseToJsonElement(text).jsonObject
+                check(data["stop_reason"]?.jsonPrimitive?.content == "end_turn") {
+                    "Claude reply incomplete; try again."
+                }
+                data["content"]!!.jsonArray
+                    .filter { it.jsonObject["type"]?.jsonPrimitive?.content == "text" }
+                    .joinToString("") { it.jsonObject["text"]!!.jsonPrimitive.content }.trim()
             }
         }
 
@@ -74,7 +79,7 @@ object Ai {
 
             $task Answer in ${language ?: "the language of the paragraph"}. Plain text, no preamble, no markdown.
         """.trimIndent()
-        return ask(prompt, maxTokens = 400)
+        return ask(prompt, maxTokens = 400, model = FAST_MODEL)
     }
 
     /** A typed question about a selection, with the same context Explain gets. */
@@ -92,7 +97,7 @@ object Ai {
             the text so far reveals; don't give away later events. Plain text, no preamble, no markdown.
         """.trimIndent()
         // Low reasoning on Opus spends part of max_tokens thinking, so leave room for it.
-        return ask(prompt, maxTokens = 2000, model = ASK_MODEL, effort = "low")
+        return ask(prompt, maxTokens = 2000, model = MODEL, effort = "low")
     }
 
     /** A hook line and a Spotify AI Playlist prompt for a blog post. */
@@ -106,7 +111,7 @@ object Ai {
             POST:
             ${text.take(12000)}
         """.trimIndent()
-        val reply = Store.json.parseToJsonElement(ask(prompt, maxTokens = 300, jsonReply = true)) as JsonObject
+        val reply = Store.json.parseToJsonElement(ask(prompt, maxTokens = 300, jsonReply = true, model = FAST_MODEL)) as JsonObject
         return (reply["hook"]?.jsonPrimitive?.content ?: "") to (reply["playlist_prompt"]?.jsonPrimitive?.content ?: "")
     }
 }

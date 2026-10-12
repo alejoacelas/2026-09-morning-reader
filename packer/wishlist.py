@@ -127,7 +127,7 @@ def entries(log=print) -> list[dict]:
         for i in range(0, len(new), 60):
             batch = new[i:i + 60]
             lines = "\n".join(f"{n}: {m['name']} | {m['url'][:150]}" for n, m in enumerate(batch))
-            reply = ask_json(RESOLVE_PROMPT.format(lines=lines), max_tokens=8000)
+            reply = ask_json(RESOLVE_PROMPT.format(lines=lines), max_tokens=8000, fast=True)
             by_n = {b.get("n"): b for b in reply.get("books", []) if isinstance(b, dict)}
             for n, m in enumerate(batch):
                 b = by_n.get(n, {})

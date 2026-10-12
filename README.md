@@ -74,12 +74,11 @@ files each time you ask, so a book bookmarked this morning shows up the next run
 
 `starter` builds the fixed first shelf and `add` builds any one book; use `wishlist
 build` to pick the next books from what you've bookmarked. Only public-domain books
-are on Gutenberg, so most modern titles are listed as "not on Gutenberg". The first
-check of new bookmarks costs about $0.03 in Gemini calls; results are cached in
-`cache/wishlist.json`.
+are on Gutenberg, so most modern titles are listed as "not on Gutenberg". Wish-list matching uses Haiku 5.5; results are cached in `cache/wishlist.json`.
 
-A pack costs about $0.02–0.65 in Gemini calls, roughly $0.13 per 100,000 words,
-and takes about a minute.
+Book preparation and Ask use Opus 5.5 directly through Anthropic. Quick explanations,
+feed hooks and lightweight matching use Haiku 5.5. The packer reports estimated
+list-price cost before the linked monthly API credits.
 
 ## Secondary material
 
@@ -87,8 +86,8 @@ At the end of a block the app offers one or two things to watch, listen to or re
 about the book or its author. They come only from the trusted sources in
 `packer/trusted-sources.toml`: YouTube channels such as the National Theatre and
 Gresham College, BBC *In Our Time* and *Great Lives*, The Public Domain Review, and
-biographies on Project Gutenberg. Edit that file to add or drop a source. Gemini keeps
-the candidates that really concern the book or author, which costs under a cent a book.
+biographies on Project Gutenberg. Edit that file to add or drop a source. Claude keeps
+the candidates that really concern the book or author.
 Each YouTube channel searched costs 100 of the 10,000 free daily quota units, so with
 six channels about 16 books a day can be searched; when the quota runs out the other
 sources still work and `./pack sources <id>` adds videos the next day.

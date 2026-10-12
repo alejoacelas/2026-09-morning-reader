@@ -1,4 +1,4 @@
-"""Gemini through OpenRouter, returning parsed JSON."""
+"""Direct Claude API calls with JSON replies and estimated list-price usage."""
 
 import json
 import os
@@ -9,7 +9,8 @@ from pathlib import Path
 
 import httpx
 
-MODEL = "google/gemini-3.8-flash"
+MODEL = "claude-opus-5-5"
+FAST_MODEL = "claude-haiku-5-5"
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -31,33 +32,58 @@ class Usage:
     local = threading.local()
 
 
-def ask_json(prompt: str, max_tokens: int = 60000, effort: str = "low") -> dict:
-    """Send one prompt and parse the JSON object in the reply. Retries transient failures."""
+def select_model(*, fast: bool = False, parallel_calls: int = 1) -> str:
+    return FAST_MODEL if fast or parallel_calls > 20 else MODEL
+
+
+def usage_cost(usage: dict, model: str) -> float:
+    """List-price estimate before monthly credits; token counts come from Claude."""
+    input_tokens = usage.get("input_tokens", 0)
+    output_tokens = usage.get("output_tokens", 0)
+    input_rate, output_rate = (4.0, 20.0)
+    if model == FAST_MODEL:
+        input_rate, output_rate = (0.1, 0.5) if input_tokens <= 100_000 else (0.5, 2.5)
+    return (input_tokens * input_rate + output_tokens * output_rate) / 1_000_000
+
+
+def ask_json(prompt: str, max_tokens: int = 60000, effort: str = "low", *,
+             fast: bool = False, parallel_calls: int = 1) -> dict:
+    """Opus by default; Haiku for quick tasks or jobs with over 20 parallel calls."""
+    model = select_model(fast=fast, parallel_calls=parallel_calls)
     body = {
-        "model": MODEL,
+        "model": model,
+        "system": "Return only valid JSON matching the requested shape. No Markdown fences or commentary.",
         "messages": [{"role": "user", "content": prompt}],
-        "response_format": {"type": "json_object"},
-        "reasoning": {"effort": effort},
+        "output_config": {"effort": effort},
         "max_tokens": max_tokens,
-        "usage": {"include": True},
     }
-    headers = {"Authorization": f"Bearer {_env('OPENROUTER_API_KEY')}", "X-Title": "morning-reader"}
+    if model == FAST_MODEL:
+        body["thinking"] = {"type": "disabled"}
+    headers = {"x-api-key": _env("ANTHROPIC_API_KEY"), "anthropic-version": "2023-06-01"}
     last_error: Exception | None = None
     for attempt in range(4):
         try:
-            resp = httpx.post("https://openrouter.ai/api/v1/chat/completions", json=body,
+            resp = httpx.post("https://api.anthropic.com/v1/messages", json=body,
                               headers=headers, timeout=600)
             resp.raise_for_status()
             data = resp.json()
             usage = data.get("usage") or {}
-            Usage.cost += usage.get("cost") or 0
-            Usage.local.cost = getattr(Usage.local, "cost", 0.0) + (usage.get("cost") or 0)
-            Usage.prompt_tokens += usage.get("prompt_tokens") or 0
-            Usage.completion_tokens += usage.get("completion_tokens") or 0
-            content = data["choices"][0]["message"]["content"] or ""
+            cost = usage_cost(usage, model)
+            Usage.cost += cost
+            Usage.local.cost = getattr(Usage.local, "cost", 0.0) + cost
+            Usage.prompt_tokens += usage.get("input_tokens") or 0
+            Usage.completion_tokens += usage.get("output_tokens") or 0
+            if data.get("stop_reason") != "end_turn":
+                raise RuntimeError(f"Claude reply incomplete: {data.get('stop_reason')}")
+            content = "".join(b["text"] for b in data["content"] if b.get("type") == "text")
             content = re.sub(r"^```(?:json)?\s*|\s*```$", "", content.strip())
             return json.loads(content)
-        except (httpx.HTTPError, json.JSONDecodeError, KeyError) as err:
+        except httpx.HTTPStatusError as err:
+            if err.response.status_code not in (408, 429, 500, 502, 503, 504, 529):
+                raise
             last_error = err
+        except (httpx.TransportError, json.JSONDecodeError, KeyError) as err:
+            last_error = err
+        if attempt < 3:
             time.sleep(5 * (attempt + 1))
-    raise RuntimeError(f"Gemini call failed after retries: {last_error}")
+    raise RuntimeError(f"Claude call failed after retries: {last_error}")

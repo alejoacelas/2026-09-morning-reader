@@ -229,7 +229,7 @@ def find(pack: dict, log=print) -> list[dict]:
         f"{c['id']} | {c['kind']} | {c['creator']} | {c['title']} | "
         f"{str(c['minutes']) + ' min' if c.get('minutes') else ''} | {c.get('description', '')}" for c in candidates)
     reply = ask_json(SCREEN_PROMPT.format(title=pack["title"], author=author, summary=pack.get("summary") or "",
-                                          max_picks=MAX_PICKS, language=language, candidates=lines), max_tokens=4000)
+                                          max_picks=MAX_PICKS, language=language, candidates=lines), max_tokens=4000, fast=True)
     by_id = {c["id"]: c for c in candidates}
     picks, seen = [], set()
     for pick in reply.get("picks", []):

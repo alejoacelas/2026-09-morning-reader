@@ -30,7 +30,7 @@ they are served as short, self-contained passages under a daily time budget.
 - The end of a block offers the best one or two pieces of **secondary material** not
   yet opened: videos, radio episodes, essays and biographies about the book or its
   author, found only in the trusted sources listed in `packer/trusted-sources.toml`
-  and screened by Gemini. Videos of 10 minutes or less are also blocks on Today; longer
+  and screened by Claude. Videos of 10 minutes or less are also blocks on Today; longer
   material opens outside the session and doesn't count toward the budget.
 - Feature requests come from the bottom of Settings or from the reader's top bar,
   which opens the same box over the text without leaving the block. Each is filed as a GitHub issue on this
@@ -44,7 +44,7 @@ they are served as short, self-contained passages under a daily time budget.
 - `app/` — the Android app (Kotlin, Jetpack Compose). It fetches blog feeds and
   calls the model itself, so mornings don't need the Mac.
 - `packer/` and `./pack` — Mac-side book preparation: Gutenberg search, Standard
-  Ebooks edition when one exists, Gemini segmentation, secondary material from
+  Ebooks edition when one exists, Claude segmentation, secondary material from
   trusted sources, push to phone.
 - `packer/wishlist.py` reads a Chrome bookmarks folder as a wish list
   (`./pack wishlist`). The folder name is a setting in `cache/settings.json`; the
@@ -68,26 +68,23 @@ covers enabling it and switching the home screen.
 
 ## Secrets
 
-`.env` (ignored) holds the keys. All are in the personal 1Password account
-(`my.1password.com`), vault `Personal`, field `credential`.
+`.env` (ignored) holds the keys. Keys are in the personal 1Password account
+(`my.1password.com`), field `credential`. Unless listed otherwise, use vault `Personal`.
 
 | Variable | 1Password item (ID) |
 | --- | --- |
-| `OPENROUTER_API_KEY` | `OPENROUTER_API_KEY — 2026-09-morning-reader` (`7x77hjicvqnnhnj7bpa46vh6ya`) |
+| `ANTHROPIC_API_KEY` | `ANTHROPIC_API_KEY — personal-apps-2026-10` (`mj6dyf42xml2ughfxqzpxey3zi`), vault `mac-agents`, field `credential` |
 | `YOUTUBE_API_KEY` | `YOUTUBE_API_KEY — 2026-09-morning-reader` (`xwm7xqceh6je7wnnghhfqmpfue`; Google Cloud project `morning-reader-27191`, `alejoacelas@gmail.com`) |
 | `GITHUB_ISSUES_TOKEN` | `GITHUB_ISSUES_TOKEN — 2026-09-morning-reader` (`n2bc52jki6ebzrstlw2hg25ure`; fine-grained token for this repository only, Issues read and write, expires 2027-10-09) |
 
-Two items share each of the first two names, so fetch by ID. Rebuild `.env` with:
+Load the Anthropic key with `~/best/dotfiles/bin/op-agent` from `mac-agents`.
+Use its item ID with `op-agent read` or `op-agent inject` to rebuild the ignored `.env`.
+The YouTube and GitHub credentials remain in the locations above.
 
-```bash
-for pair in OPENROUTER_API_KEY:7x77hjicvqnnhnj7bpa46vh6ya YOUTUBE_API_KEY:xwm7xqceh6je7wnnghhfqmpfue \
-            GITHUB_ISSUES_TOKEN:n2bc52jki6ebzrstlw2hg25ure; do
-  echo "${pair%%:*}=$(op item get "${pair#*:}" --account my.1password.com --fields credential --reveal)"
-done > .env
-```
-
-The OpenRouter key and the GitHub token are compiled into the APK, so never publish
-a built APK. The model is `google/gemini-3.8-flash`, except Ask, which uses
-`anthropic/claude-opus-5.5` with low reasoning. API spending is approved:
-build packs and rerun model calls without asking about cost. OpenRouter tops up
-automatically.
+The Anthropic key and GitHub token are compiled into the private APK; never publish
+an APK. Direct Anthropic calls use the monthly API credits linked to Alejandro's
+Projects. Opus 5.5 is the default for book preparation and Ask. Haiku 5.5 handles
+Explain, feed hooks, wish-list matching and secondary-source filtering. Jobs with
+more than 20 parallel model calls must pass `parallel_calls` to `ask_json`, which
+selects Haiku. Displayed pack costs estimate list price before credits.
+API spending is approved for building packs and rerunning model calls.
