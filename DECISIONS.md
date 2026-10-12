@@ -29,7 +29,7 @@
 
 ### Do the heavy work once, on the Mac
 
-- `./pack` segments each book with Gemini once and pushes a JSON pack. The phone
+- `./pack` segments each book with Claude once and pushes a JSON pack. The phone
   only calls the model for Explain and Ask and for blog-post hooks, so mornings don't
   depend on the Mac.
 - Hooks, recaps, summaries and Explain and Ask answers are written in the book's
@@ -39,9 +39,10 @@
   losing reading progress. Re-segmenting a book changes its block ids.
 - The Notes tab shows what the reader wrote or asked: Notes and Asks with their
   answers. Explain lookups are quick definitions, so they are kept but not listed.
-- Gemini 3.8 Flash via OpenRouter, with minimal reasoning, for everything but Ask.
-  Ask uses Claude Opus 5.5 with low reasoning at the user's request (#2): about
-  $0.01 an answer against $0.001 on Gemini.
+- Direct Anthropic calls use Opus 5.5 for book preparation and Ask, and Haiku 5.5
+  for Explain, feed hooks, wish-list matching and secondary-source filtering.
+  Jobs with more than 20 parallel calls use Haiku. Monthly credits from the
+  personal Max 20x plan reduce API charges; displayed pack costs are list-price estimates.
 - Explain is for a word or sentence the reader doesn't understand: it gives the
   meaning briefly and names a period event or work only when the passage clearly
   refers to one (#3).
@@ -50,7 +51,7 @@
 
 - Videos, radio, essays and biographies come only from the hand-picked list in
   `packer/trusted-sources.toml`, never a broad search, because a broad search can't
-  guarantee quality. Gemini only filters that list; it doesn't widen it.
+  guarantee quality. Claude only filters that list; it doesn't widen it.
 - The list leans toward biography and context on the author and period, which the user
   finds most interesting.
 - Videos of 10 minutes or less are blocks and count toward the budget. Longer videos,
@@ -135,3 +136,9 @@ Added the wish list from a Chrome bookmarks folder. Its name and contents stay i
 Put the app on the Boox Go7 as its home screen, simplified for e-ink. Also set the
 Boox's auto power-off to never (device setting, not in this repository): after 15
 minutes asleep it was shutting down fully and needed a long-press cold boot.
+
+### 2026-10-12
+
+Use direct Anthropic calls to spend the linked Max 20x monthly API credits.
+Opus is the default; Haiku serves fast helpers and jobs above 20 parallel calls.
+Implemented in [890a66a](https://github.com/alejoacelas/2026-09-morning-reader/commit/890a66a).
