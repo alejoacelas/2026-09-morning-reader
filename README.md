@@ -25,9 +25,11 @@ device the app turns black on white and leaves out videos, Spotify prompts,
 secondary material and feature requests. The grid icon on Today opens Boox's own
 launcher, for its library, other apps and settings.
 
-Every `adb-phone` and `./pack` command reaches the Boox when `PHONE_SERIAL=ec27fd9`
-is set, for example `PHONE_SERIAL=ec27fd9 ./pack push`. Wireless debugging must be
-on, and the Boox turns Wi-Fi off while asleep, so wake it first. Reading progress,
+`./pack` commands reach the Boox with `--boox`, for example `./pack push --boox`;
+`adb-phone` reaches it when `PHONE_SERIAL=ec27fd9` is set. Plugging the Boox into the
+Mac by USB is the reliable connection: USB debugging is on and the Mac is authorised.
+Wireless debugging also works, but the Boox turns Wi-Fi off while asleep, so wake it
+first. Reading progress,
 the budget and feeds are kept separately on each device.
 
 After installing on the Boox, Boox may mark the app disabled; enable it and make it
@@ -59,6 +61,21 @@ loads new packs when it opens or when you tap refresh.
 ./pack annotate                      # add character notes to packs built before they existed
 ./pack push                          # re-push every built pack
 ```
+
+## Your own books and files
+
+`./pack file` builds packs from EPUBs and text PDFs you already have, such as books
+bought elsewhere. `./pack send` copies any file (a PDF with diagrams, a paper, a
+comic) into the Boox's `Books` folder, where Boox's own reader opens it.
+
+```bash
+./pack file --boox ~/Downloads/book.epub   # build a pack and push it to the Boox
+./pack file ~/Downloads/book.pdf           # or to the phone
+./pack send ~/Downloads/paper.pdf          # into the Boox library, unchanged
+```
+
+A scanned PDF has no text layer, so `file` refuses it; send it instead. A PDF loses
+its figures and tables in a pack, so send a heavily illustrated book as well.
 
 ## Wish list
 

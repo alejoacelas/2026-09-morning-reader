@@ -74,6 +74,11 @@
   a launcher. Boox's launcher stays installed and one button away, and switching back
   is one `adb` command, with no reset.
 
+### Read the reader's own books the same way
+
+- EPUBs and text PDFs the reader owns become packs like Gutenberg books, so they join
+  the daily session. Other files go unchanged into the Boox library for Boox's reader.
+
 ### Keep private lists out of the public repository
 
 - The repository is public. Feed lists, reading lists and downloads live in the

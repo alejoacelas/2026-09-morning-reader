@@ -66,6 +66,12 @@ show up there too, and `Eink.on` gates what the Boox leaves out. Install there b
 running the same commands with `PHONE_SERIAL=ec27fd9`; the README's Boox section
 covers enabling it and switching the home screen.
 
+When Alejo points you to books or files to read on the Boox, use `./pack file --boox`
+for EPUBs and text PDFs (they become packs on Today) and `./pack send` for anything
+else; the README's "Your own books and files" section has details. If the Boox isn't
+found, ask him to plug it into the Mac by USB. Packs of bought books hold their full
+text, so they stay in the ignored `packs/`.
+
 ## Secrets
 
 `.env` (ignored) holds the keys. Keys are in the personal 1Password account
