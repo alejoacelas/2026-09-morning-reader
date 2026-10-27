@@ -3,7 +3,12 @@ name = "packer"
 version = "0.1.0"
 description = "Builds morning reader book packs from public-domain EPUBs"
 requires-python = ">=3.12"
-dependencies = ["beautifulsoup4>=4.12", "lxml>=5", "httpx>=0.27"]
+dependencies = [
+    "beautifulsoup4>=4.12",
+    "lxml>=5",
+    "httpx>=0.27",
+    "pymupdf>=2.0",
+]
 
 [build-system]
 requires = ["hatchling"]

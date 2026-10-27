@@ -143,6 +143,7 @@ def extract(path: Path) -> dict:
             "author": ", ".join(c.get_text(strip=True) for c in opf.find_all("dc:creator")[:2]),
             "language": (opf.find("dc:language").get_text(strip=True) if opf.find("dc:language") else "en"),
         }
+        targets = _toc_targets(z, opf, base)
         paragraphs: list[str] = []
         for href in spine:
             if SKIP_FILES.search(href):
@@ -173,9 +174,31 @@ def extract(path: Path) -> dict:
                 text = _text(el)
                 if not text:
                     continue
-                paragraphs.append(("## " + text.replace("\n", " ")) if el.name[0] == "h" else text)
+                anchors = targets.get(href, set())
+                in_toc = bool(anchors) and len(text.split()) <= 20 and (
+                    el.get("id") in anchors or el.find(id=lambda i: i in anchors) is not None)
+                paragraphs.append(("## " + text.replace("\n", " ")) if el.name[0] == "h" or in_toc else text)
         meta["paragraphs"] = dedupe_headings(paragraphs)
         return meta
+
+
+def _toc_targets(z: zipfile.ZipFile, opf, base: str) -> dict[str, set[str]]:
+    """Anchors the table of contents points at, by file, so books that style chapter titles
+    as plain paragraphs still get headings."""
+    targets: dict[str, set[str]] = {}
+    for item in opf.find_all("item"):
+        href = item["href"]
+        is_ncx = item.get("media-type") == "application/x-dtbncx+xml"
+        if not (is_ncx or "nav" in (item.get("properties") or "").split()):
+            continue
+        toc = BeautifulSoup(z.read(base + href), "xml")
+        links = [c["src"] for c in toc.find_all("content")] if is_ncx else [a.get("href", "") for a in toc.find_all("a")]
+        folder = href.rsplit("/", 1)[0] + "/" if "/" in href else ""
+        for link in links:
+            if "#" in link:
+                file, anchor = link.split("#", 1)
+                targets.setdefault(folder + file, set()).add(anchor)
+    return targets
 
 
 def dedupe_headings(paragraphs: list[str]) -> list[str]:
